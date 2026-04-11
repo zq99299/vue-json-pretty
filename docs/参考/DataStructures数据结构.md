@@ -156,10 +156,12 @@ const shouldShowActions = (node) => {
 ```typescript
 interface NodeActions {
   copy: () => void;
-  expandAll: (depth?: number) => void;
-  collapseAll: (depth?: number) => void;
-  expandFirstLevel: () => void;
-  collapseFirstLevel: () => void;
+  expandAll: (depth?: number, cascade?: boolean) => void;
+  collapseAll: (depth?: number, cascade?: boolean) => void;
+  expandFirstLevel: (cascade?: boolean) => void;
+  collapseFirstLevel: (cascade?: boolean) => void;
+  expandToLevel: (depth: number) => void;
+  collapseToLevel: (depth: number) => void;
 }
 ```
 
@@ -168,29 +170,39 @@ interface NodeActions {
 | 方法名 | 参数 | 说明 |
 |--------|------|------|
 | copy | 无 | 复制节点数据到剪贴板 |
-| expandAll | depth?: number | 展开子节点，可选层级深度参数 |
-| collapseAll | depth?: number | 收缩子节点，可选层级深度参数 |
-| expandFirstLevel | 无 | 展开第 1 级子节点 |
-| collapseFirstLevel | 无 | 收缩第 1 级子节点 |
+| expandAll | depth?: number, cascade?: boolean | 展开子节点，可选层级深度和级联参数 |
+| collapseAll | depth?: number, cascade?: boolean | 收缩子节点，可选层级深度和级联参数 |
+| expandFirstLevel | cascade?: boolean | 展开第 1 级子节点 |
+| collapseFirstLevel | cascade?: boolean | 收缩第 1 级子节点 |
+| expandToLevel | depth: number | 级联展开前 N 级子节点 |
+| collapseToLevel | depth: number | 级联收缩前 N 级子节点 |
+
+### cascade 参数说明
+
+- `cascade: false`（默认）：精确模式，只操作第 N 级
+- `cascade: true`：级联模式，操作前 N 级
 
 ### 使用示例
 
 ```vue
 <template>
   <vue-json-pretty :data="data">
-    <template #renderNodeActions="{ node, copy, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel }">
+    <template #renderNodeActions="{ node, copy, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel, expandToLevel, collapseToLevel }">
       <div class="node-actions">
         <!-- 复制按钮 -->
         <button @click.stop="copy">📋 复制</button>
         
-        <!-- 展开/收缩按钮 -->
+        <!-- 精确模式：只操作第 N 级 -->
         <button @click.stop="expandFirstLevel()">📂 展开第 1 级</button>
-        <button @click.stop="expandAll()">📂 展开所有</button>
         <button @click.stop="collapseFirstLevel()">📁 收缩第 1 级</button>
-        <button @click.stop="collapseAll()">📁 收缩所有</button>
         
-        <!-- 带参数的展开 -->
-        <button @click.stop="expandAll(2)">📂 展开第 2 级</button>
+        <!-- 级联模式：操作前 N 级 -->
+        <button @click.stop="expandToLevel(2)">📂 展开前 2 级</button>
+        <button @click.stop="collapseToLevel(2)">📁 收缩前 2 级</button>
+        
+        <!-- 全部操作 -->
+        <button @click.stop="expandAll()">📂 展开所有</button>
+        <button @click.stop="collapseAll()">📁 收缩所有</button>
       </div>
     </template>
   </vue-json-pretty>
@@ -211,10 +223,12 @@ interface RenderNodeActionsParams {
   defaultActions: {
     copy: () => void;
   };
-  expandAll: (depth?: number) => void;
-  collapseAll: (depth?: number) => void;
-  expandFirstLevel: () => void;
-  collapseFirstLevel: () => void;
+  expandAll: (depth?: number, cascade?: boolean) => void;
+  collapseAll: (depth?: number, cascade?: boolean) => void;
+  expandFirstLevel: (cascade?: boolean) => void;
+  collapseFirstLevel: (cascade?: boolean) => void;
+  expandToLevel: (depth: number) => void;
+  collapseToLevel: (depth: number) => void;
 }
 ```
 
@@ -229,6 +243,8 @@ interface RenderNodeActionsParams {
 | collapseAll | Function | 收缩子节点的方法 |
 | expandFirstLevel | Function | 展开第 1 级子节点 |
 | collapseFirstLevel | Function | 收缩第 1 级子节点 |
+| expandToLevel | Function | 级联展开前 N 级子节点 |
+| collapseToLevel | Function | 级联收缩前 N 级子节点 |
 
 ---
 
@@ -240,9 +256,9 @@ interface RenderNodeActionsParams {
 
 ```typescript
 interface TreeExposeMethods {
-  expandAll: (path?: string, depth?: number) => void;
-  collapseAll: (path?: string, depth?: number) => void;
-  getChildrenPaths: (path: string, depth?: number) => string[];
+  expandAll: (path?: string, depth?: number, cascade?: boolean) => void;
+  collapseAll: (path?: string, depth?: number, cascade?: boolean) => void;
+  getChildrenPaths: (path: string, depth?: number, cascade?: boolean) => string[];
 }
 ```
 

@@ -8,9 +8,9 @@
 
 | 方法名 | 说明 | 参数 | 返回值 |
 |--------|------|------|--------|
-| [expandAll](#expandall) | 展开指定节点下的子节点 | (path?: string, depth?: number) | void |
-| [collapseAll](#collapseall) | 收缩指定节点下的子节点 | (path?: string, depth?: number) | void |
-| [getChildrenPaths](#getchildrenpaths) | 获取指定节点下的子节点路径 | (path: string, depth?: number) | string[] |
+| [expandAll](#expandall) | 展开指定节点下的子节点 | (path?: string, depth?: number, cascade?: boolean) | void |
+| [collapseAll](#collapseall) | 收缩指定节点下的子节点 | (path?: string, depth?: number, cascade?: boolean) | void |
+| [getChildrenPaths](#getchildrenpaths) | 获取指定节点下的子节点路径 | (path: string, depth?: number, cascade?: boolean) | string[] |
 
 ## 基本用法
 
@@ -38,7 +38,7 @@ jsonTreeRef.value?.expandAll();
 #### 签名
 
 ```typescript
-expandAll(path?: string, depth?: number): void
+expandAll(path?: string, depth?: number, cascade?: boolean): void
 ```
 
 #### 参数
@@ -47,14 +47,27 @@ expandAll(path?: string, depth?: number): void
 |--------|------|------|--------|------|
 | path | string | 否 | - | 节点路径，不传则展开所有节点 |
 | depth | number | 否 | Infinity | 层级深度 |
+| cascade | boolean | 否 | false | 是否级联操作 |
+
+#### cascade 参数说明
+
+- `cascade: false`（默认）：精确模式，只操作第 N 级
+  - `expandAll('root', 2, false)` - 只展开第 2 级子节点
+  - 适用于：精确控制某一层级的展开/折叠
+
+- `cascade: true`：级联模式，操作前 N 级
+  - `expandAll('root', 2, true)` - 展开第 1 级和第 2 级子节点
+  - 适用于：用户想看到第 N 级内容时，确保父级都已展开
 
 #### depth 参数说明
 
-- `1`：只展开第 1 级子节点
-- `2`：只展开第 2 级子节点
-- `Infinity`：展开所有子节点（默认）
+- `1`：操作第 1 级子节点
+- `2`：操作第 2 级子节点
+- `Infinity`：操作所有子节点（默认）
 
-**重要**：`depth` 参数表示只操作指定层级的节点，不是"展开前 N 层"。
+**重要**：`depth` 参数的含义取决于 `cascade` 参数：
+- `cascade: false`：只操作第 N 级
+- `cascade: true`：操作前 N 级
 
 #### 示例
 
@@ -87,14 +100,14 @@ const expandSpecificNode = () => {
   jsonTreeRef.value?.expandAll('root.users');
 };
 
-// 只展开第 1 级子节点
-const expandFirstLevel = () => {
-  jsonTreeRef.value?.expandAll('root', 1);
+// 精确模式：只展开第 2 级子节点
+const expandSecondLevelOnly = () => {
+  jsonTreeRef.value?.expandAll('root', 2, false);
 };
 
-// 只展开第 2 级子节点
-const expandSecondLevel = () => {
-  jsonTreeRef.value?.expandAll('root', 2);
+// 级联模式：展开前 2 级子节点
+const expandFirstTwoLevels = () => {
+  jsonTreeRef.value?.expandAll('root', 2, true);
 };
 </script>
 ```
@@ -108,7 +121,7 @@ const expandSecondLevel = () => {
 #### 签名
 
 ```typescript
-collapseAll(path?: string, depth?: number): void
+collapseAll(path?: string, depth?: number, cascade?: boolean): void
 ```
 
 #### 参数
@@ -117,6 +130,7 @@ collapseAll(path?: string, depth?: number): void
 |--------|------|------|--------|------|
 | path | string | 否 | - | 节点路径，不传则收缩所有节点 |
 | depth | number | 否 | Infinity | 层级深度 |
+| cascade | boolean | 否 | false | 是否级联操作 |
 
 #### 示例
 
@@ -127,11 +141,11 @@ jsonTreeRef.value?.collapseAll();
 // 收缩指定节点下的所有子节点
 jsonTreeRef.value?.collapseAll('root.users');
 
-// 只收缩第 1 级子节点
-jsonTreeRef.value?.collapseAll('root', 1);
+// 精确模式：只收缩第 1 级子节点
+jsonTreeRef.value?.collapseAll('root', 1, false);
 
-// 只收缩第 2 级子节点
-jsonTreeRef.value?.collapseAll('root', 2);
+// 级联模式：收缩前 2 级子节点
+jsonTreeRef.value?.collapseAll('root', 2, true);
 ```
 
 ---
@@ -143,7 +157,7 @@ jsonTreeRef.value?.collapseAll('root', 2);
 #### 签名
 
 ```typescript
-getChildrenPaths(path: string, depth?: number): string[]
+getChildrenPaths(path: string, depth?: number, cascade?: boolean): string[]
 ```
 
 #### 参数
@@ -152,6 +166,7 @@ getChildrenPaths(path: string, depth?: number): string[]
 |--------|------|------|--------|------|
 | path | string | 是 | - | 节点路径 |
 | depth | number | 否 | Infinity | 层级深度 |
+| cascade | boolean | 否 | false | 是否级联获取 |
 
 #### 返回值
 
@@ -181,10 +196,15 @@ onMounted(() => {
   console.log(allPaths);
   // ['root.users[0]', 'root.users[1]']
   
-  // 获取第 1 级子节点路径
-  const firstLevelPaths = jsonTreeRef.value?.getChildrenPaths('root', 1);
+  // 精确模式：获取第 1 级子节点路径
+  const firstLevelPaths = jsonTreeRef.value?.getChildrenPaths('root', 1, false);
   console.log(firstLevelPaths);
   // ['root.users']
+  
+  // 级联模式：获取前 2 级子节点路径
+  const firstTwoLevelPaths = jsonTreeRef.value?.getChildrenPaths('root', 2, true);
+  console.log(firstTwoLevelPaths);
+  // ['root.users', 'root.users[0]', 'root.users[1]']
 });
 </script>
 ```
@@ -319,9 +339,9 @@ onMounted(() => {
 
 ```typescript
 interface TreeExposeMethods {
-  expandAll: (path?: string, depth?: number) => void;
-  collapseAll: (path?: string, depth?: number) => void;
-  getChildrenPaths: (path: string, depth?: number) => string[];
+  expandAll: (path?: string, depth?: number, cascade?: boolean) => void;
+  collapseAll: (path?: string, depth?: number, cascade?: boolean) => void;
+  getChildrenPaths: (path: string, depth?: number, cascade?: boolean) => string[];
 }
 ```
 

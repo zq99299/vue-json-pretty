@@ -97,38 +97,61 @@
         @icon-click="handleAll"
         @selected-change="handleAll"
       >
-        <template #renderNodeActions="{ node, expandFirstLevel, collapseFirstLevel, expandAll, collapseAll }">
+        <template #renderNodeActions="{ node, expandAll, collapseAll, expandToLevel, collapseToLevel }">
           <div 
             v-if="state.selectedValue === node.path && hasCollapsibleChildren(node)" 
             class="node-actions-container" 
             style="margin-left: 12px;"
           >
-            <button class="action-btn" @click.stop="expandFirstLevel()" title="只展开第 1 级子节点">
-              📂 展开第 1 级
-            </button>
-            <button class="action-btn" @click.stop="expandAll()" title="展开所有子节点">
-              📂 展开所有
-            </button>
-            <button class="action-btn" @click.stop="collapseFirstLevel()" title="只收缩第 1 级子节点">
-              📁 收缩第 1 级
-            </button>
-            <button class="action-btn" @click.stop="collapseAll()" title="收缩所有子节点">
-              📁 收缩所有
-            </button>
-            <div class="custom-depth-control">
-              <input 
-                v-model.number="state.customDepth" 
-                type="number" 
-                min="1" 
-                max="10" 
-                class="depth-input"
-                placeholder="层级"
-              />
-              <button class="action-btn" @click.stop="handleExpandCustomDepth(node)" title="只展开指定层级的子节点">
-                📂 展开第N级
+            <div class="action-group">
+              <span class="group-label">精确模式（只操作第 N 级）:</span>
+              <button class="action-btn" @click.stop="expandAll(1, false)" title="只展开第 1 级子节点">
+                📂 展开第 1 级
               </button>
-              <button class="action-btn" @click.stop="handleCollapseCustomDepth(node)" title="只收缩指定层级的子节点">
-                📁 收缩第N级
+              <button class="action-btn" @click.stop="expandAll(2, false)" title="只展开第 2 级子节点">
+                📂 展开第 2 级
+              </button>
+              <button class="action-btn" @click.stop="expandAll(3, false)" title="只展开第 3 级子节点">
+                📂 展开第 3 级
+              </button>
+              <button class="action-btn" @click.stop="collapseAll(1, false)" title="只收缩第 1 级子节点">
+                📁 收缩第 1 级
+              </button>
+              <button class="action-btn" @click.stop="collapseAll(2, false)" title="只收缩第 2 级子节点">
+                📁 收缩第 2 级
+              </button>
+              <button class="action-btn" @click.stop="collapseAll(3, false)" title="只收缩第 3 级子节点">
+                📁 收缩第 3 级
+              </button>
+            </div>
+            <div class="action-group">
+              <span class="group-label">级联模式（操作前 N 级）:</span>
+              <button class="action-btn cascade" @click.stop="expandToLevel(1)" title="展开前 1 级">
+                📂 展开前 1 级
+              </button>
+              <button class="action-btn cascade" @click.stop="expandToLevel(2)" title="展开前 2 级">
+                📂 展开前 2 级
+              </button>
+              <button class="action-btn cascade" @click.stop="expandToLevel(3)" title="展开前 3 级">
+                📂 展开前 3 级
+              </button>
+              <button class="action-btn cascade" @click.stop="collapseToLevel(1)" title="折叠前 1 级">
+                📁 折叠前 1 级
+              </button>
+              <button class="action-btn cascade" @click.stop="collapseToLevel(2)" title="折叠前 2 级">
+                📁 折叠前 2 级
+              </button>
+              <button class="action-btn cascade" @click.stop="collapseToLevel(3)" title="折叠前 3 级">
+                📁 折叠前 3 级
+              </button>
+            </div>
+            <div class="action-group">
+              <span class="group-label">全部操作:</span>
+              <button class="action-btn" @click.stop="expandAll()" title="展开所有子节点">
+                📂 展开所有
+              </button>
+              <button class="action-btn" @click.stop="collapseAll()" title="收缩所有子节点">
+                📁 收缩所有
               </button>
             </div>
           </div>
@@ -196,7 +219,6 @@ export default defineComponent({
       deep: 3,
       node: '',
       showIcon: false,
-      customDepth: 2,
     });
 
     const { localDarkMode, toggleLocalDarkMode, globalDarkModeState } = useDarkMode();
@@ -207,16 +229,6 @@ export default defineComponent({
 
     const handleAll = (...rest) => {
       // console.log('handleAll: ', rest);
-    };
-
-    const handleExpandCustomDepth = (node) => {
-      const depth = state.customDepth || 2;
-      jsonTreeRef.value?.expandAll(node.path, depth);
-    };
-
-    const handleCollapseCustomDepth = (node) => {
-      const depth = state.customDepth || 2;
-      jsonTreeRef.value?.collapseAll(node.path, depth);
     };
 
     const hasCollapsibleChildren = (node) => {
@@ -259,8 +271,6 @@ export default defineComponent({
       jsonTreeRef,
       handleNodeClick,
       handleAll,
-      handleExpandCustomDepth,
-      handleCollapseCustomDepth,
       hasCollapsibleChildren,
       localDarkMode,
       toggleLocalDarkMode,
@@ -272,9 +282,29 @@ export default defineComponent({
 
 <style scoped>
 .node-actions-container {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  position: relative;
+  z-index: 10;
+}
+
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
+}
+
+.group-label {
+  font-size: 11px;
+  color: #666;
+  margin-right: 4px;
+  min-width: 140px;
 }
 
 .action-btn {
@@ -292,6 +322,16 @@ export default defineComponent({
   border-color: #999;
 }
 
+.action-btn.cascade {
+  background: #e6f7ff;
+  border-color: #91d5ff;
+}
+
+.action-btn.cascade:hover {
+  background: #bae7ff;
+  border-color: #69c0ff;
+}
+
 .dark-mode .action-btn {
   background: #333;
   border-color: #555;
@@ -303,27 +343,22 @@ export default defineComponent({
   border-color: #777;
 }
 
-.custom-depth-control {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  margin-left: 8px;
-  padding-left: 8px;
-  border-left: 1px solid #ddd;
+.dark-mode .action-btn.cascade {
+  background: #111d2c;
+  border-color: #15395b;
 }
 
-.depth-input {
-  width: 60px;
-  padding: 4px 8px;
-  font-size: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
+.dark-mode .action-btn.cascade:hover {
+  background: #112a45;
+  border-color: #154c83;
 }
 
-.dark-mode .depth-input {
-  background: #333;
-  border-color: #555;
-  color: #fff;
+.dark-mode .node-actions-container {
+  background: #1a1a1a;
+  border-color: #333;
+}
+
+.dark-mode .group-label {
+  color: #aaa;
 }
 </style>

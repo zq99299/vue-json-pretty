@@ -12,10 +12,12 @@ export interface NodeDataType extends JSONFlattenReturnType {
 
 export interface NodeActions {
   copy: () => void;
-  expandAll: (depth?: number) => void;
-  collapseAll: (depth?: number) => void;
-  expandFirstLevel: () => void;
-  collapseFirstLevel: () => void;
+  expandAll: (depth?: number, cascade?: boolean) => void;
+  collapseAll: (depth?: number, cascade?: boolean) => void;
+  expandFirstLevel: (cascade?: boolean) => void;
+  collapseFirstLevel: (cascade?: boolean) => void;
+  expandToLevel: (depth: number) => void;
+  collapseToLevel: (depth: number) => void;
 }
 
 export interface RenderNodeActionsParams {
@@ -23,10 +25,12 @@ export interface RenderNodeActionsParams {
   defaultActions: {
     copy: () => void;
   };
-  expandAll: (depth?: number) => void;
-  collapseAll: (depth?: number) => void;
-  expandFirstLevel: () => void;
-  collapseFirstLevel: () => void;
+  expandAll: (depth?: number, cascade?: boolean) => void;
+  collapseAll: (depth?: number, cascade?: boolean) => void;
+  expandFirstLevel: (cascade?: boolean) => void;
+  collapseFirstLevel: (cascade?: boolean) => void;
+  expandToLevel: (depth: number) => void;
+  collapseToLevel: (depth: number) => void;
 }
 
 // The props here will be exposed to the user through the topmost component.
@@ -282,10 +286,12 @@ export default defineComponent({
       };
       
       const nodeActions = {
-        expandAll: (depth = Infinity) => emit('expandAll', props.node.path, depth),
-        collapseAll: (depth = Infinity) => emit('collapseAll', props.node.path, depth),
-        expandFirstLevel: () => emit('expandAll', props.node.path, 1),
-        collapseFirstLevel: () => emit('collapseAll', props.node.path, 1),
+        expandAll: (depth = Infinity, cascade = false) => emit('expandAll', props.node.path, depth, cascade),
+        collapseAll: (depth = Infinity, cascade = false) => emit('collapseAll', props.node.path, depth, cascade),
+        expandFirstLevel: (cascade = false) => emit('expandAll', props.node.path, 1, cascade),
+        collapseFirstLevel: (cascade = false) => emit('collapseAll', props.node.path, 1, cascade),
+        expandToLevel: (depth: number) => emit('expandAll', props.node.path, depth, true),
+        collapseToLevel: (depth: number) => emit('collapseAll', props.node.path, depth, true),
       };
       
       return typeof render === 'function' ? (

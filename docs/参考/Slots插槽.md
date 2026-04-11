@@ -10,7 +10,7 @@
 |--------|------|------|
 | [renderNodeKey](#rendernodekey) | 自定义渲染节点键 | { node, defaultKey } |
 | [renderNodeValue](#rendernodevalue) | 自定义渲染节点值 | { node, defaultValue } |
-| [renderNodeActions](#rendernodeactions) | 自定义渲染节点操作 | { node, defaultActions, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel } |
+| [renderNodeActions](#rendernodeactions) | 自定义渲染节点操作 | { node, defaultActions, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel, expandToLevel, collapseToLevel } |
 
 ## 插槽列表
 
@@ -152,10 +152,19 @@ const isEmail = (value) => {
 | node | NodeData | 当前节点数据 |
 | defaultActions | Object | 默认操作对象 |
 | defaultActions.copy | Function | 复制节点数据的方法 |
-| expandAll | Function | 展开子节点的方法，可选参数 depth |
-| collapseAll | Function | 收缩子节点的方法，可选参数 depth |
-| expandFirstLevel | Function | 展开第 1 级子节点 |
-| collapseFirstLevel | Function | 收缩第 1 级子节点 |
+| expandAll | Function | 展开子节点的方法，参数 (depth?: number, cascade?: boolean) |
+| collapseAll | Function | 收缩子节点的方法，参数 (depth?: number, cascade?: boolean) |
+| expandFirstLevel | Function | 展开第 1 级子节点，参数 (cascade?: boolean) |
+| collapseFirstLevel | Function | 收缩第 1 级子节点，参数 (cascade?: boolean) |
+| expandToLevel | Function | 级联展开前 N 级子节点，参数 (depth: number) |
+| collapseToLevel | Function | 级联收缩前 N 级子节点，参数 (depth: number) |
+
+#### cascade 参数说明
+
+`expandAll`、`collapseAll`、`expandFirstLevel`、`collapseFirstLevel` 方法都支持 `cascade` 参数：
+
+- `cascade: false`（默认）：精确模式，只操作第 N 级
+- `cascade: true`：级联模式，操作前 N 级
 
 #### 示例
 
@@ -189,14 +198,21 @@ const data = ref({ /* ... */ });
     :data="data" 
     :selected-value="selectedNode"
   >
-    <template #renderNodeActions="{ node, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel }">
+    <template #renderNodeActions="{ node, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel, expandToLevel, collapseToLevel }">
       <div 
         v-if="selectedNode === node.path && hasCollapsibleChildren(node)" 
         class="node-actions"
       >
+        <!-- 精确模式 -->
         <button @click.stop="expandFirstLevel()">📂 展开第 1 级</button>
-        <button @click.stop="expandAll()">📂 展开所有</button>
         <button @click.stop="collapseFirstLevel()">📁 收缩第 1 级</button>
+        
+        <!-- 级联模式 -->
+        <button @click.stop="expandToLevel(2)">📂 展开前 2 级</button>
+        <button @click.stop="collapseToLevel(2)">📁 收缩前 2 级</button>
+        
+        <!-- 全部操作 -->
+        <button @click.stop="expandAll()">📂 展开所有</button>
         <button @click.stop="collapseAll()">📁 收缩所有</button>
       </div>
     </template>

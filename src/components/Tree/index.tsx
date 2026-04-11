@@ -14,9 +14,9 @@ import { emitError, jsonFlatten, cloneDeep } from 'src/utils';
 import './styles.less';
 
 export interface TreeExposeMethods {
-  expandAll: (path?: string, depth?: number) => void;
-  collapseAll: (path?: string, depth?: number) => void;
-  getChildrenPaths: (path: string, depth?: number) => string[];
+  expandAll: (path?: string, depth?: number, cascade?: boolean) => void;
+  collapseAll: (path?: string, depth?: number, cascade?: boolean) => void;
+  getChildrenPaths: (path: string, depth?: number, cascade?: boolean) => string[];
 }
 
 export default defineComponent({
@@ -378,7 +378,7 @@ export default defineComponent({
       emit('update:data', newData);
     };
 
-    const getChildrenPaths = (path: string, depth = Infinity): string[] => {
+    const getChildrenPaths = (path: string, depth = Infinity, cascade = false): string[] => {
       const children: string[] = [];
       const originData = originFlatData.value;
       
@@ -395,6 +395,21 @@ export default defineComponent({
             (item.path.startsWith(path + '.') || item.path.startsWith(path + '[')) &&
             item.path !== path &&
             (item.type === 'objectStart' || item.type === 'arrayStart')
+          ) {
+            children.push(item.path);
+          }
+        }
+      } else if (cascade) {
+        const maxLevel = parentLevel + depth;
+        
+        for (let i = 0; i < originData.length; i++) {
+          const item = originData[i];
+          
+          if (
+            (item.path.startsWith(path + '.') || item.path.startsWith(path + '[')) &&
+            item.path !== path &&
+            (item.type === 'objectStart' || item.type === 'arrayStart') &&
+            item.level <= maxLevel
           ) {
             children.push(item.path);
           }
@@ -419,13 +434,13 @@ export default defineComponent({
       return children;
     };
 
-    const expandAll = (path?: string, depth = Infinity) => {
+    const expandAll = (path?: string, depth = Infinity, cascade = false) => {
       if (!path) {
         state.hiddenPaths = {};
         return;
       }
 
-      const childrenPaths = getChildrenPaths(path, depth);
+      const childrenPaths = getChildrenPaths(path, depth, cascade);
       const newHiddenPaths = { ...state.hiddenPaths };
       
       childrenPaths.forEach(childPath => {
@@ -435,13 +450,13 @@ export default defineComponent({
       state.hiddenPaths = newHiddenPaths;
     };
 
-    const collapseAll = (path?: string, depth = Infinity) => {
+    const collapseAll = (path?: string, depth = Infinity, cascade = false) => {
       if (!path) {
         state.hiddenPaths = initHiddenPaths(props.deep, props.collapsedNodeLength);
         return;
       }
 
-      const childrenPaths = getChildrenPaths(path, depth);
+      const childrenPaths = getChildrenPaths(path, depth, cascade);
       const newHiddenPaths = { ...state.hiddenPaths };
       
       childrenPaths.forEach(childPath => {
@@ -538,8 +553,8 @@ export default defineComponent({
               onIconClick={handleIconClick}
               onSelectedChange={handleSelectedChange}
               onValueChange={handleValueChange}
-              onExpandAll={(path: string, depth: number) => expandAll(path, depth)}
-              onCollapseAll={(path: string, depth: number) => collapseAll(path, depth)}
+              onExpandAll={(path: string, depth: number, cascade: boolean) => expandAll(path, depth, cascade)}
+              onCollapseAll={(path: string, depth: number, cascade: boolean) => collapseAll(path, depth, cascade)}
               class={props.dynamicHeight ? 'dynamic-height' : undefined}
               style={
                 props.dynamicHeight
