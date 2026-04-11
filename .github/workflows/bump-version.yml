@@ -43,7 +43,7 @@ jobs:
       # 3. 发布到 npm（发布到 latest tag）
       - name: Publish NPM
         run: |
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build
           npm publish
         env:
