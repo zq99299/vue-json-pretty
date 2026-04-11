@@ -64,11 +64,11 @@ For complete documentation, see [docs/README.md](docs/README.md)
 ## Using NPM or Yarn
 
 ```bash
-$ npm install vue-json-pretty --save
+$ npm install @zhuqiang/vue-json-pretty --save
 ```
 
 ```bash
-$ yarn add vue-json-pretty
+$ yarn add @zhuqiang/vue-json-pretty
 ```
 
 ## Use Vue2
@@ -89,8 +89,8 @@ The CSS file is included separately and needs to be imported manually. You can e
 </template>
 
 <script>
-import VueJsonPretty from 'vue-json-pretty';
-import 'vue-json-pretty/lib/styles.css';
+import VueJsonPretty from '@zhuqiang/vue-json-pretty';
+import '@zhuqiang/vue-json-pretty/lib/styles.css';
 
 export default {
   components: {
@@ -106,7 +106,7 @@ export default {
 
 ```
 import Vue from 'vue'
-import VueJsonPretty from 'vue-json-pretty'
+import VueJsonPretty from '@zhuqiang/vue-json-pretty'
 
 Vue.component("vue-json-pretty", VueJsonPretty)
 ```
@@ -115,7 +115,7 @@ Vue.component("vue-json-pretty", VueJsonPretty)
 
 ```js
 css: [
-  'vue-json-pretty/lib/styles.css'
+  '@zhuqiang/vue-json-pretty/lib/styles.css'
 ],
 plugins: [
   '@/plugins/vue-json-pretty'

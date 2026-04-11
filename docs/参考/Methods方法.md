@@ -2,7 +2,7 @@
 
 ## 概述
 
-通过 `ref` 可以调用 vue-json-pretty 组件暴露的方法，实现编程方式控制组件行为。
+通过 `ref` 可以调用 @zhuqiang/vue-json-pretty 组件暴露的方法，实现编程方式控制组件行为。
 
 ## 速查表
 

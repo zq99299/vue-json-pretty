@@ -73,7 +73,7 @@
 ## 🔗 相关资源
 
 - [GitHub 仓库](https://github.com/zq99299/vue-json-pretty)
-- [NPM 包](https://www.npmjs.com/package/vue-json-pretty)
+- [NPM 包](https://www.npmjs.com/package/@zhuqiang/vue-json-pretty)
 - [在线示例](https://github.com/zq99299/vue-json-pretty/tree/master/example)
 
 ## 📝 文档编写规范

@@ -2,7 +2,7 @@
 
 ## 概述
 
-vue-json-pretty 组件提供了多个事件，用于响应用户交互和数据变化。
+@zhuqiang/vue-json-pretty 组件提供了多个事件，用于响应用户交互和数据变化。
 
 ## 速查表
 

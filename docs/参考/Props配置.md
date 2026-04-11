@@ -2,7 +2,7 @@
 
 ## 概述
 
-vue-json-pretty 组件提供了丰富的配置选项，允许您自定义 JSON 数据的展示方式、交互行为和外观。
+@zhuqiang/vue-json-pretty 组件提供了丰富的配置选项，允许您自定义 JSON 数据的展示方式、交互行为和外观。
 
 ## 速查表
 
@@ -90,7 +90,7 @@ vue-json-pretty 组件提供了丰富的配置选项，允许您自定义 JSON �
 import { ref } from 'vue';
 
 const jsonData = ref({
-  name: 'vue-json-pretty',
+  name: '@zhuqiang/vue-json-pretty',
   version: '2.0.0',
   features: ['tree', 'select', 'edit']
 });
