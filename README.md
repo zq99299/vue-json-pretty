@@ -26,6 +26,8 @@
 
 English | [简体中文](./README.zh_CN.md)
 
+二次修改满足自身需求
+
 ## Features
 
 - As a JSON Formatter.
@@ -42,10 +44,10 @@ For complete documentation, see [docs/README.md](docs/README.md)
 
 - **Getting Started**
   - [Quick Start](docs/快速开始.md) - 5 minutes tutorial
-  
+
 - **How-to Guides**
   - [How to Expand/Collapse Nodes](docs/指南/如何展开收缩节点.md) - Control node expansion programmatically
-  
+
 - **API Reference**
   - [Methods](docs/参考/Methods方法.md) - Methods callable via ref
   - [DataStructures](docs/参考/DataStructures数据结构.md) - Type definitions and data structures
