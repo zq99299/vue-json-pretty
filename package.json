@@ -1,5 +1,5 @@
 {
-  "name": "vue-json-pretty",
+  "name": "@zq99299/vue-json-pretty",
   "version": "2.2.8",
   "description": "A JSON tree view component that is easy to use and also supports data selection.",
   "author": "mrcode <99299684@qq.com>",
