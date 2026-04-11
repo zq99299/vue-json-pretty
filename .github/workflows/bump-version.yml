@@ -1,3 +1,5 @@
+# 自动发布工作流
+# 当推送到 master 分支时，自动更新版本号并发布到 npm
 name: Create Release
 
 on:
@@ -9,9 +11,16 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     steps:
+      # 检出代码
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      # 自动更新版本号
+      # 根据 commit message 自动决定版本号更新方式：
+      # - "feat: ..." -> minor 版本更新（如 1.0.0 -> 1.1.0）
+      # - "fix: ..." -> patch 版本更新（如 1.0.0 -> 1.0.1）
+      # - "BREAKING CHANGE: ..." -> major 版本更新（如 1.0.0 -> 2.0.0）
+      # 并自动创建对应的 git tag
       - name: Automated Version Bump
         uses: phips28/gh-action-bump-version@v9.1.0
         env:
@@ -19,14 +28,19 @@ jobs:
           GITHUB_EMAIL: ${{ secrets.CI_EMAIL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag-prefix: 'v'
+          tag-prefix: 'v'  # tag 前缀，如 v1.0.0
 
+      # 设置 Node.js 环境
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
 
+      # 发布到 npm
+      # 1. 安装依赖（npm ci 比 npm install 更严格，适合 CI 环境）
+      # 2. 构建项目
+      # 3. 发布到 npm（发布到 latest tag）
       - name: Publish NPM
         run: |
           npm ci
