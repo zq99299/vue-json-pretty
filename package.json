@@ -1,8 +1,8 @@
 {
   "name": "vue-json-pretty",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "A JSON tree view component that is easy to use and also supports data selection.",
-  "author": "leezng <im.leezng@gmail.com>",
+  "author": "mrcode <99299684@qq.com>",
   "main": "lib/vue-json-pretty.js",
   "module": "esm/vue-json-pretty.js",
   "scripts": {
@@ -18,9 +18,9 @@
   "typings": "types/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git@github.com:leezng/vue-json-pretty.git"
+    "url": "git@github.com:zq99299/vue-json-pretty.git"
   },
-  "homepage": "https://leezng.github.io/vue-json-pretty",
+  "homepage": "https://github.com/zq99299/vue-json-pretty/tree/dev/docs/README.md",
   "keywords": [
     "vue",
     "json",
@@ -30,7 +30,7 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/leezng/vue-json-pretty/issues"
+    "url": "https://github.com/zq99299/vue-json-pretty/issues"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",

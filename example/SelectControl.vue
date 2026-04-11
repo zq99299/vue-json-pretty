@@ -74,6 +74,7 @@
       <h3>vue-json-pretty:</h3>
       <vue-json-pretty
         v-if="state.renderOK"
+        ref="jsonTreeRef"
         v-model:selectedValue="state.selectedValue"
         :theme="localDarkMode"
         :data="state.data"
@@ -95,13 +96,50 @@
         @brackets-click="handleAll"
         @icon-click="handleAll"
         @selected-change="handleAll"
-      />
+      >
+        <template #renderNodeActions="{ node, expandFirstLevel, collapseFirstLevel, expandAll, collapseAll }">
+          <div 
+            v-if="state.selectedValue === node.path && hasCollapsibleChildren(node)" 
+            class="node-actions-container" 
+            style="margin-left: 12px;"
+          >
+            <button class="action-btn" @click.stop="expandFirstLevel()" title="只展开第 1 级子节点">
+              📂 展开第 1 级
+            </button>
+            <button class="action-btn" @click.stop="expandAll()" title="展开所有子节点">
+              📂 展开所有
+            </button>
+            <button class="action-btn" @click.stop="collapseFirstLevel()" title="只收缩第 1 级子节点">
+              📁 收缩第 1 级
+            </button>
+            <button class="action-btn" @click.stop="collapseAll()" title="收缩所有子节点">
+              📁 收缩所有
+            </button>
+            <div class="custom-depth-control">
+              <input 
+                v-model.number="state.customDepth" 
+                type="number" 
+                min="1" 
+                max="10" 
+                class="depth-input"
+                placeholder="层级"
+              />
+              <button class="action-btn" @click.stop="handleExpandCustomDepth(node)" title="只展开指定层级的子节点">
+                📂 展开第N级
+              </button>
+              <button class="action-btn" @click.stop="handleCollapseCustomDepth(node)" title="只收缩指定层级的子节点">
+                📁 收缩第N级
+              </button>
+            </div>
+          </div>
+        </template>
+      </vue-json-pretty>
     </div>
   </div>
 </template>
 
 <script>
-import { defineComponent, reactive, watch, nextTick } from 'vue';
+import { defineComponent, reactive, watch, nextTick, ref } from 'vue';
 import VueJsonPretty from 'src';
 import { useDarkMode } from './useDarkMode';
 
@@ -139,6 +177,8 @@ export default defineComponent({
     VueJsonPretty,
   },
   setup() {
+    const jsonTreeRef = ref();
+    
     const state = reactive({
       renderOK: true,
       val: JSON.stringify(defaultData),
@@ -156,6 +196,7 @@ export default defineComponent({
       deep: 3,
       node: '',
       showIcon: false,
+      customDepth: 2,
     });
 
     const { localDarkMode, toggleLocalDarkMode, globalDarkModeState } = useDarkMode();
@@ -165,7 +206,26 @@ export default defineComponent({
     };
 
     const handleAll = (...rest) => {
-      console.log('handleAll: ', rest);
+      // console.log('handleAll: ', rest);
+    };
+
+    const handleExpandCustomDepth = (node) => {
+      const depth = state.customDepth || 2;
+      jsonTreeRef.value?.expandAll(node.path, depth);
+    };
+
+    const handleCollapseCustomDepth = (node) => {
+      const depth = state.customDepth || 2;
+      jsonTreeRef.value?.collapseAll(node.path, depth);
+    };
+
+    const hasCollapsibleChildren = (node) => {
+      if (node.type !== 'objectStart' && node.type !== 'arrayStart') {
+        return false;
+      }
+      
+      const childrenPaths = jsonTreeRef.value?.getChildrenPaths(node.path, 1) || [];
+      return childrenPaths.length > 0;
     };
 
     watch(
@@ -196,8 +256,12 @@ export default defineComponent({
 
     return {
       state,
+      jsonTreeRef,
       handleNodeClick,
       handleAll,
+      handleExpandCustomDepth,
+      handleCollapseCustomDepth,
+      hasCollapsibleChildren,
       localDarkMode,
       toggleLocalDarkMode,
       globalDarkModeState,
@@ -205,3 +269,61 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.node-actions-container {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.dark-mode .action-btn {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+.dark-mode .action-btn:hover {
+  background: #444;
+  border-color: #777;
+}
+
+.custom-depth-control {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid #ddd;
+}
+
+.depth-input {
+  width: 60px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.dark-mode .depth-input {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+</style>

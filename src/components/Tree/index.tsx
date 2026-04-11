@@ -13,6 +13,12 @@ import TreeNode, { treeNodePropsPass, NodeDataType } from 'src/components/TreeNo
 import { emitError, jsonFlatten, cloneDeep } from 'src/utils';
 import './styles.less';
 
+export interface TreeExposeMethods {
+  expandAll: (path?: string, depth?: number) => void;
+  collapseAll: (path?: string, depth?: number) => void;
+  getChildrenPaths: (path: string, depth?: number) => string[];
+}
+
 export default defineComponent({
   name: 'Tree',
 
@@ -84,7 +90,7 @@ export default defineComponent({
     'update:data',
   ],
 
-  setup(props, { emit, slots }) {
+  setup(props, { emit, slots, expose }) {
     const treeRef = ref<HTMLElement>();
 
     const originFlatData = computed(() => jsonFlatten(props.data, props.rootPath));
@@ -372,6 +378,79 @@ export default defineComponent({
       emit('update:data', newData);
     };
 
+    const getChildrenPaths = (path: string, depth = Infinity): string[] => {
+      const children: string[] = [];
+      const originData = originFlatData.value;
+      
+      const parentNode = originData.find(item => item.path === path);
+      if (!parentNode) return children;
+      
+      const parentLevel = parentNode.level;
+      
+      if (depth === Infinity) {
+        for (let i = 0; i < originData.length; i++) {
+          const item = originData[i];
+          
+          if (
+            (item.path.startsWith(path + '.') || item.path.startsWith(path + '[')) &&
+            item.path !== path &&
+            (item.type === 'objectStart' || item.type === 'arrayStart')
+          ) {
+            children.push(item.path);
+          }
+        }
+      } else {
+        const targetLevel = parentLevel + depth;
+        
+        for (let i = 0; i < originData.length; i++) {
+          const item = originData[i];
+          
+          if (
+            (item.path.startsWith(path + '.') || item.path.startsWith(path + '[')) &&
+            item.path !== path &&
+            (item.type === 'objectStart' || item.type === 'arrayStart') &&
+            item.level === targetLevel
+          ) {
+            children.push(item.path);
+          }
+        }
+      }
+      
+      return children;
+    };
+
+    const expandAll = (path?: string, depth = Infinity) => {
+      if (!path) {
+        state.hiddenPaths = {};
+        return;
+      }
+
+      const childrenPaths = getChildrenPaths(path, depth);
+      const newHiddenPaths = { ...state.hiddenPaths };
+      
+      childrenPaths.forEach(childPath => {
+        delete newHiddenPaths[childPath];
+      });
+      
+      state.hiddenPaths = newHiddenPaths;
+    };
+
+    const collapseAll = (path?: string, depth = Infinity) => {
+      if (!path) {
+        state.hiddenPaths = initHiddenPaths(props.deep, props.collapsedNodeLength);
+        return;
+      }
+
+      const childrenPaths = getChildrenPaths(path, depth);
+      const newHiddenPaths = { ...state.hiddenPaths };
+      
+      childrenPaths.forEach(childPath => {
+        newHiddenPaths[childPath] = 1;
+      });
+      
+      state.hiddenPaths = newHiddenPaths;
+    };
+
     watchEffect(() => {
       if (propsErrorMessage.value) {
         emitError(propsErrorMessage.value);
@@ -414,6 +493,12 @@ export default defineComponent({
       },
     );
 
+    expose({
+      expandAll,
+      collapseAll,
+      getChildrenPaths,
+    });
+
     return () => {
       const renderNodeKey = props.renderNodeKey ?? slots.renderNodeKey;
       const renderNodeValue = props.renderNodeValue ?? slots.renderNodeValue;
@@ -453,6 +538,8 @@ export default defineComponent({
               onIconClick={handleIconClick}
               onSelectedChange={handleSelectedChange}
               onValueChange={handleValueChange}
+              onExpandAll={(path: string, depth: number) => expandAll(path, depth)}
+              onCollapseAll={(path: string, depth: number) => collapseAll(path, depth)}
               class={props.dynamicHeight ? 'dynamic-height' : undefined}
               style={
                 props.dynamicHeight

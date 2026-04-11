@@ -1,28 +1,28 @@
 <p align="center">
-  <a href="https://github.com/leezng/vue-json-pretty">
+  <a href="https://github.com/zq99299/vue-json-pretty">
     <img width="200" src="./static/logo.svg">
   </a>
 </p>
 
 <h1 align="center">
-  <a href="https://github.com/leezng/vue-json-pretty" target="_blank">Vue Json Pretty</a>
+  <a href="https://github.com/zq99299/vue-json-pretty" target="_blank">Vue Json Pretty</a>
 </h1>
 
 <div align="center">
 
 <p>A Vue component for rendering JSON data as a tree structure.</p>
-<p>Now it supports Vue3 at least. If you still use Vue2, see <a href="https://github.com/leezng/vue-json-pretty/tree/1.x">1.x</a>.</p>
+<p>Now it supports Vue3 at least. If you still use Vue2, see <a href="https://github.com/zq99299/vue-json-pretty/tree/1.x">1.x</a>.</p>
 
-[![Build Status](https://travis-ci.org/leezng/vue-json-pretty.svg?branch=master)](https://travis-ci.org/leezng/vue-json-pretty)
+[![Build Status](https://travis-ci.org/zq99299/vue-json-pretty.svg?branch=master)](https://travis-ci.org/zq99299/vue-json-pretty)
 [![npm package](https://img.shields.io/npm/v/vue-json-pretty.svg)](https://www.npmjs.org/package/vue-json-pretty)
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/leezng/vue-json-pretty/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/zq99299/vue-json-pretty/blob/master/LICENSE)
 [![Sizes](https://img.shields.io/bundlephobia/min/vue-json-pretty)](https://bundlephobia.com/result?p=vue-json-pretty)
 [![NPM downloads](http://img.shields.io/npm/dm/vue-json-pretty.svg?style=flat-square)](https://www.npmtrends.com/vue-json-pretty)
-[![Issues](https://img.shields.io/github/issues-raw/leezng/vue-json-pretty)](https://github.com/leezng/vue-json-pretty/issues)
+[![Issues](https://img.shields.io/github/issues-raw/zq99299/vue-json-pretty)](https://github.com/zq99299/vue-json-pretty/issues)
 
 </div>
 
-[![](./static/screenshot.png)](https://github.com/leezng/vue-json-pretty)
+[![](./static/screenshot.png)](https://github.com/zq99299/vue-json-pretty)
 
 English | [简体中文](./README.zh_CN.md)
 
@@ -33,6 +33,22 @@ English | [简体中文](./README.zh_CN.md)
 - Support get item data from JSON.
 - Support big data.
 - Support editable.
+
+## 📚 Documentation
+
+For complete documentation, see [docs/README.md](docs/README.md)
+
+### Quick Navigation
+
+- **Getting Started**
+  - [Quick Start](docs/快速开始.md) - 5 minutes tutorial
+  
+- **How-to Guides**
+  - [How to Expand/Collapse Nodes](docs/指南/如何展开收缩节点.md) - Control node expansion programmatically
+  
+- **API Reference**
+  - [Methods](docs/参考/Methods方法.md) - Methods callable via ref
+  - [DataStructures](docs/参考/DataStructures数据结构.md) - Type definitions and data structures
 
 ## Environment Support
 
@@ -156,6 +172,6 @@ plugins: [
 
 ## Contributors
 
-<a href="https://github.com/leezng/vue-json-pretty/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=leezng/vue-json-pretty" />
+<a href="https://github.com/zq99299/vue-json-pretty/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=zq99299/vue-json-pretty" />
 </a>

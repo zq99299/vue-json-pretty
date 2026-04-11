@@ -8,6 +8,22 @@
 - 支持大数据虚拟滚动
 - 支持编辑
 
+## 📚 文档
+
+完整的使用文档请查看 [docs/README.md](docs/README.md)
+
+### 快速导航
+
+- **新手入门**
+  - [快速开始](docs/快速开始.md) - 5 分钟上手教程
+  
+- **使用指南**
+  - [如何展开收缩节点](docs/指南/如何展开收缩节点.md) - 编程方式控制节点展开收缩
+  
+- **API 参考**
+  - [Methods 方法](docs/参考/Methods方法.md) - 通过 ref 调用的方法
+  - [DataStructures 数据结构](docs/参考/DataStructures数据结构.md) - 类型定义和数据结构
+
 ## Props
 
 | 属性                     | 说明                                            | 类型                                           | 默认值        |
@@ -52,8 +68,8 @@
 
 ## Slots
 
-| 插槽名            | 描述         | 参数                                           |
-| ----------------- | ------------ | ---------------------------------------------- | ----- |
-| renderNodeKey     | 渲染节点键   | { node, defaultKey }                           |
-| renderNodeValue   | 渲染节点值   | { node, defaultValue }                         |
-| renderNodeActions | 渲染节点操作 | boolean \| ({ node, defaultActions }) => vNode | false |
+| 插槽名            | 描述         | 参数                   |
+| ----------------- | ------------ | ---------------------- |
+| renderNodeKey     | 渲染节点键   | { node, defaultKey }   |
+| renderNodeValue   | 渲染节点值   | { node, defaultValue } |
+| renderNodeActions | 渲染节点操作 | { node, defaultActions } |

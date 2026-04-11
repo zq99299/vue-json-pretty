@@ -10,6 +10,25 @@ export interface NodeDataType extends JSONFlattenReturnType {
   id: number;
 }
 
+export interface NodeActions {
+  copy: () => void;
+  expandAll: (depth?: number) => void;
+  collapseAll: (depth?: number) => void;
+  expandFirstLevel: () => void;
+  collapseFirstLevel: () => void;
+}
+
+export interface RenderNodeActionsParams {
+  node: NodeDataType;
+  defaultActions: {
+    copy: () => void;
+  };
+  expandAll: (depth?: number) => void;
+  collapseAll: (depth?: number) => void;
+  expandFirstLevel: () => void;
+  collapseFirstLevel: () => void;
+}
+
 // The props here will be exposed to the user through the topmost component.
 export const treeNodePropsPass = {
   // JSONLike data.
@@ -47,7 +66,7 @@ export const treeNodePropsPass = {
   // Custom render for node actions.
   renderNodeActions: {
     type: [Boolean, Function] as PropType<
-      boolean | ((opt: { node: NodeDataType; defaultActions: { copy: () => void } }) => unknown)
+      boolean | ((opt: RenderNodeActionsParams) => unknown)
     >,
     default: undefined,
   },
@@ -146,6 +165,8 @@ export default defineComponent({
     'iconClick',
     'selectedChange',
     'valueChange',
+    'expandAll',
+    'collapseAll',
   ],
 
   setup(props, { emit }) {
@@ -259,8 +280,20 @@ export default defineComponent({
       const defaultActions = {
         copy: handleCopy,
       };
+      
+      const nodeActions = {
+        expandAll: (depth = Infinity) => emit('expandAll', props.node.path, depth),
+        collapseAll: (depth = Infinity) => emit('collapseAll', props.node.path, depth),
+        expandFirstLevel: () => emit('expandAll', props.node.path, 1),
+        collapseFirstLevel: () => emit('collapseAll', props.node.path, 1),
+      };
+      
       return typeof render === 'function' ? (
-        render({ node: props.node, defaultActions })
+        render({ 
+          node: props.node, 
+          defaultActions,
+          ...nodeActions
+        })
       ) : (
         <span onClick={handleCopy} class="vjs-tree-node-actions-item">
           copy
