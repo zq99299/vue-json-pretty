@@ -11,6 +11,11 @@
 | [expandAll](#expandall) | 展开指定节点下的子节点 | (path?: string, depth?: number, cascade?: boolean) | void |
 | [collapseAll](#collapseall) | 收缩指定节点下的子节点 | (path?: string, depth?: number, cascade?: boolean) | void |
 | [getChildrenPaths](#getchildrenpaths) | 获取指定节点下的子节点路径 | (path: string, depth?: number, cascade?: boolean) | string[] |
+| [search](#search) | 执行搜索 | (options: SearchOptions) | SearchResult[] |
+| [clearSearch](#clearsearch) | 清除搜索结果 | () | void |
+| [scrollToResult](#scrolltoresult) | 滚动到指定搜索结果 | (result: SearchResult) | void |
+| [scrollToNextResult](#scrolltonextresult) | 滚动到下一个搜索结果 | () | SearchResult \| null |
+| [scrollToPrevResult](#scrolltoprevresult) | 滚动到上一个搜索结果 | () | SearchResult \| null |
 
 ## 基本用法
 
@@ -301,6 +306,173 @@ const restoreExpandState = () => {
 };
 ```
 
+---
+
+### search
+
+执行搜索，查找 JSON 树中匹配的节点。
+
+#### 签名
+
+```typescript
+search(options: SearchOptions): SearchResult[]
+```
+
+#### SearchOptions 参数
+
+| 参数名 | 类型 | 必填 | 默认值 | 说明 |
+|--------|------|------|--------|------|
+| keyword | string | 是 | - | 搜索关键词 |
+| caseSensitive | boolean | 否 | false | 是否大小写敏感 |
+| regex | boolean | 否 | false | 是否使用正则表达式 |
+| searchIn | ('key' \| 'value' \| 'path')[] | 否 | ['key', 'value'] | 搜索范围 |
+
+#### SearchResult 返回值
+
+```typescript
+interface SearchResult {
+  path: string;           // 节点路径
+  nodeIndex: number;      // 在 flatData 中的索引
+  matchType: 'key' | 'value' | 'path'; // 匹配类型
+  content: string;        // 匹配的内容
+  level: number;          // 节点层级
+}
+```
+
+#### 示例
+
+```vue
+<template>
+  <div>
+    <input v-model="keyword" @keyup.enter="handleSearch" />
+    <button @click="handleSearch">搜索</button>
+    <vue-json-pretty ref="jsonTreeRef" :data="data" virtual :height="600" />
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+const keyword = ref('');
+
+const handleSearch = () => {
+  const results = jsonTreeRef.value?.search({
+    keyword: keyword.value,
+    caseSensitive: false,
+  });
+  console.log(`找到 ${results?.length || 0} 个结果`);
+};
+</script>
+```
+
+---
+
+### clearSearch
+
+清除搜索结果和高亮状态。
+
+#### 签名
+
+```typescript
+clearSearch(): void
+```
+
+#### 示例
+
+```javascript
+jsonTreeRef.value?.clearSearch();
+```
+
+---
+
+### scrollToResult
+
+滚动到指定的搜索结果并高亮显示。
+
+#### 签名
+
+```typescript
+scrollToResult(result: SearchResult): void
+```
+
+#### 参数
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| result | SearchResult | 是 | 搜索结果对象 |
+
+#### 示例
+
+```javascript
+const results = jsonTreeRef.value?.search({ keyword: 'test' });
+if (results && results.length > 0) {
+  jsonTreeRef.value?.scrollToResult(results[0]);
+}
+```
+
+---
+
+### scrollToNextResult
+
+滚动到下一个搜索结果。
+
+#### 签名
+
+```typescript
+scrollToNextResult(): SearchResult | null
+```
+
+#### 返回值
+
+返回下一个搜索结果，如果没有结果则返回 `null`。
+
+#### 示例
+
+```vue
+<template>
+  <div>
+    <button @click="handleNext">下一个</button>
+    <vue-json-pretty ref="jsonTreeRef" :data="data" />
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+
+const handleNext = () => {
+  const result = jsonTreeRef.value?.scrollToNextResult();
+  if (!result) {
+    console.log('没有更多结果');
+  }
+};
+</script>
+```
+
+---
+
+### scrollToPrevResult
+
+滚动到上一个搜索结果。
+
+#### 签名
+
+```typescript
+scrollToPrevResult(): SearchResult | null
+```
+
+#### 返回值
+
+返回上一个搜索结果，如果没有结果则返回 `null`。
+
+#### 示例
+
+```javascript
+const result = jsonTreeRef.value?.scrollToPrevResult();
+```
+
 ## 注意事项
 
 ### 1. 节点路径格式
@@ -338,10 +510,30 @@ onMounted(() => {
 ## TypeScript 类型定义
 
 ```typescript
+interface SearchResult {
+  path: string;
+  nodeIndex: number;
+  matchType: 'key' | 'value' | 'path';
+  content: string;
+  level: number;
+}
+
+interface SearchOptions {
+  keyword: string;
+  caseSensitive?: boolean;
+  regex?: boolean;
+  searchIn?: ('key' | 'value' | 'path')[];
+}
+
 interface TreeExposeMethods {
   expandAll: (path?: string, depth?: number, cascade?: boolean) => void;
   collapseAll: (path?: string, depth?: number, cascade?: boolean) => void;
   getChildrenPaths: (path: string, depth?: number, cascade?: boolean) => string[];
+  search: (options: SearchOptions) => SearchResult[];
+  clearSearch: () => void;
+  scrollToResult: (result: SearchResult) => void;
+  scrollToNextResult: () => SearchResult | null;
+  scrollToPrevResult: () => SearchResult | null;
 }
 ```
 

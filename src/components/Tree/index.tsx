@@ -13,10 +13,30 @@ import TreeNode, { treeNodePropsPass, NodeDataType } from 'src/components/TreeNo
 import { emitError, jsonFlatten, cloneDeep } from 'src/utils';
 import './styles.less';
 
+export interface SearchResult {
+  path: string;
+  nodeIndex: number;
+  matchType: 'key' | 'value' | 'path';
+  content: string;
+  level: number;
+}
+
+export interface SearchOptions {
+  keyword: string;
+  caseSensitive?: boolean;
+  regex?: boolean;
+  searchIn?: ('key' | 'value' | 'path')[];
+}
+
 export interface TreeExposeMethods {
   expandAll: (path?: string, depth?: number, cascade?: boolean) => void;
   collapseAll: (path?: string, depth?: number, cascade?: boolean) => void;
   getChildrenPaths: (path: string, depth?: number, cascade?: boolean) => string[];
+  search: (options: SearchOptions) => SearchResult[];
+  clearSearch: () => void;
+  scrollToResult: (result: SearchResult) => void;
+  scrollToNextResult: () => SearchResult | null;
+  scrollToPrevResult: () => SearchResult | null;
 }
 
 export default defineComponent({
@@ -76,6 +96,22 @@ export default defineComponent({
       type: String as PropType<'light' | 'dark'>,
       default: 'light',
     },
+    searchKeyword: {
+      type: String,
+      default: '',
+    },
+    searchCaseSensitive: {
+      type: Boolean,
+      default: false,
+    },
+    searchRegex: {
+      type: Boolean,
+      default: false,
+    },
+    highlightSearchResult: {
+      type: Boolean,
+      default: true,
+    },
   },
 
   slots: ['renderNodeKey', 'renderNodeValue', 'renderNodeActions'],
@@ -88,6 +124,7 @@ export default defineComponent({
     'selectedChange',
     'update:selectedValue',
     'update:data',
+    'searchResultChange',
   ],
 
   setup(props, { emit, slots, expose }) {
@@ -118,6 +155,9 @@ export default defineComponent({
       hiddenPaths: initHiddenPaths(props.deep, props.collapsedNodeLength),
       startIndex: 0,
       endIndex: 0,
+      searchResults: [] as SearchResult[],
+      currentResultIndex: -1,
+      highlightedPath: '',
     });
 
     // Dynamic height bookkeeping
@@ -466,6 +506,242 @@ export default defineComponent({
       state.hiddenPaths = newHiddenPaths;
     };
 
+    const getParentPaths = (path: string): string[] => {
+      const paths: string[] = [];
+      const parts: string[] = [];
+      
+      let current = '';
+      let i = 0;
+      
+      while (i < path.length) {
+        const char = path[i];
+        
+        if (char === '.') {
+          if (current) {
+            parts.push(current);
+          }
+          current = '';
+          i++;
+        } else if (char === '[') {
+          if (current) {
+            parts.push(current);
+          }
+          current = '';
+          let j = i + 1;
+          while (j < path.length && path[j] !== ']') {
+            j++;
+          }
+          const index = path.slice(i + 1, j);
+          parts.push(`[${index}]`);
+          i = j + 1;
+        } else {
+          current += char;
+          i++;
+        }
+      }
+      
+      if (current) {
+        parts.push(current);
+      }
+      
+      let buildPath = '';
+      for (let k = 0; k < parts.length - 1; k++) {
+        const part = parts[k];
+        if (part.startsWith('[')) {
+          buildPath += part;
+        } else {
+          buildPath = buildPath ? `${buildPath}.${part}` : part;
+        }
+        if (buildPath) {
+          paths.push(buildPath);
+        }
+      }
+      
+      return paths;
+    };
+
+    const expandToNode = (path: string) => {
+      const parentPaths = getParentPaths(path);
+      const newHiddenPaths = { ...state.hiddenPaths };
+      
+      parentPaths.forEach(parentPath => {
+        delete newHiddenPaths[parentPath];
+      });
+      
+      state.hiddenPaths = newHiddenPaths;
+    };
+
+    const matchKeyword = (text: string, options: SearchOptions): boolean => {
+      if (!text || !options.keyword) return false;
+      
+      const { keyword, caseSensitive = false, regex = false } = options;
+      
+      try {
+        if (regex) {
+          const flags = caseSensitive ? 'g' : 'gi';
+          const pattern = new RegExp(keyword, flags);
+          return pattern.test(String(text));
+        } else {
+          const searchText = caseSensitive ? String(text) : String(text).toLowerCase();
+          const searchKeyword = caseSensitive ? keyword : keyword.toLowerCase();
+          return searchText.includes(searchKeyword);
+        }
+      } catch {
+        return false;
+      }
+    };
+
+    const search = (options: SearchOptions): SearchResult[] => {
+      const { keyword, searchIn = ['key', 'value'] } = options;
+      
+      if (!keyword) {
+        state.searchResults = [];
+        state.currentResultIndex = -1;
+        state.highlightedPath = '';
+        return [];
+      }
+      
+      const results: SearchResult[] = [];
+      const originData = originFlatData.value;
+      
+      for (let i = 0; i < originData.length; i++) {
+        const item = originData[i];
+        
+        if (searchIn.includes('key') && item.key && matchKeyword(item.key, options)) {
+          results.push({
+            path: item.path,
+            nodeIndex: i,
+            matchType: 'key',
+            content: item.key,
+            level: item.level,
+          });
+        }
+        
+        if (searchIn.includes('value') && item.content !== null && item.content !== undefined) {
+          const contentStr = item.type === 'content' ? String(item.content) : '';
+          if (contentStr && matchKeyword(contentStr, options)) {
+            results.push({
+              path: item.path,
+              nodeIndex: i,
+              matchType: 'value',
+              content: contentStr,
+              level: item.level,
+            });
+          }
+        }
+        
+        if (searchIn.includes('path') && matchKeyword(item.path, options)) {
+          results.push({
+            path: item.path,
+            nodeIndex: i,
+            matchType: 'path',
+            content: item.path,
+            level: item.level,
+          });
+        }
+      }
+      
+      state.searchResults = results;
+      state.currentResultIndex = results.length > 0 ? 0 : -1;
+      
+      if (results.length > 0) {
+        scrollToResult(results[0]);
+      } else {
+        state.highlightedPath = '';
+      }
+      
+      return results;
+    };
+
+    const clearSearch = () => {
+      state.searchResults = [];
+      state.currentResultIndex = -1;
+      state.highlightedPath = '';
+    };
+
+    const scrollToResult = (result: SearchResult) => {
+      expandToNode(result.path);
+      
+      const attemptScroll = (attempts: number) => {
+        if (attempts > 10) return;
+        
+        if (props.virtual && props.dynamicHeight) {
+          if (heights.length !== flatData.value.length) {
+            initDynamicHeights(flatData.value.length);
+          }
+        }
+        
+        let targetIndex = -1;
+        for (let i = 0; i < flatData.value.length; i++) {
+          if (flatData.value[i].path === result.path) {
+            targetIndex = i;
+            break;
+          }
+        }
+        
+        if (targetIndex === -1) {
+          setTimeout(() => attemptScroll(attempts + 1), 50);
+          return;
+        }
+        
+        state.highlightedPath = result.path;
+        
+        if (props.virtual) {
+          let scrollPosition: number;
+          
+          if (props.dynamicHeight) {
+            if (heights.length !== flatData.value.length) {
+              initDynamicHeights(flatData.value.length);
+            }
+            scrollPosition = offsets[targetIndex] || 0;
+          } else {
+            scrollPosition = targetIndex * props.itemHeight;
+          }
+          
+          if (treeRef.value) {
+            const viewportHeight = props.height;
+            const maxScroll = Math.max(0, (props.dynamicHeight ? totalHeight.value : flatData.value.length * props.itemHeight) - viewportHeight);
+            const finalScroll = Math.min(scrollPosition - viewportHeight / 3, maxScroll);
+            treeRef.value.scrollTo({
+              top: Math.max(0, finalScroll),
+              behavior: 'smooth',
+            });
+          }
+        } else {
+          const element = rowRefs[targetIndex];
+          if (element && treeRef.value) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+        
+        updateVisibleData();
+      };
+      
+      nextTick(() => {
+        setTimeout(() => attemptScroll(0), 50);
+      });
+    };
+
+    const scrollToNextResult = (): SearchResult | null => {
+      if (state.searchResults.length === 0) return null;
+      
+      state.currentResultIndex = (state.currentResultIndex + 1) % state.searchResults.length;
+      const result = state.searchResults[state.currentResultIndex];
+      scrollToResult(result);
+      return result;
+    };
+
+    const scrollToPrevResult = (): SearchResult | null => {
+      if (state.searchResults.length === 0) return null;
+      
+      state.currentResultIndex = state.currentResultIndex === 0 
+        ? state.searchResults.length - 1 
+        : state.currentResultIndex - 1;
+      const result = state.searchResults[state.currentResultIndex];
+      scrollToResult(result);
+      return result;
+    };
+
     watchEffect(() => {
       if (propsErrorMessage.value) {
         emitError(propsErrorMessage.value);
@@ -508,10 +784,32 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => props.searchKeyword,
+      (keyword) => {
+        if (keyword) {
+          const results = search({
+            keyword,
+            caseSensitive: props.searchCaseSensitive,
+            regex: props.searchRegex,
+          });
+          emit('searchResultChange', results);
+        } else {
+          clearSearch();
+          emit('searchResultChange', []);
+        }
+      },
+    );
+
     expose({
       expandAll,
       collapseAll,
       getChildrenPaths,
+      search,
+      clearSearch,
+      scrollToResult,
+      scrollToNextResult,
+      scrollToPrevResult,
     });
 
     return () => {
@@ -555,6 +853,7 @@ export default defineComponent({
               onValueChange={handleValueChange}
               onExpandAll={(path: string, depth: number, cascade: boolean) => expandAll(path, depth, cascade)}
               onCollapseAll={(path: string, depth: number, cascade: boolean) => collapseAll(path, depth, cascade)}
+              isSearchHighlight={state.highlightedPath === item.path}
               class={props.dynamicHeight ? 'dynamic-height' : undefined}
               style={
                 props.dynamicHeight
