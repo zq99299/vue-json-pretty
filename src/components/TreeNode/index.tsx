@@ -156,6 +156,11 @@ export default defineComponent({
     collapsed: Boolean,
     // Whether the current node is checked(When using the selection function).
     checked: Boolean,
+    // Whether the current node is highlighted by search.
+    isSearchHighlight: {
+      type: Boolean,
+      default: false,
+    },
     style: Object as PropType<CSSProperties>,
     onSelectedChange: {
       type: Function as PropType<(node: NodeDataType) => void>,
@@ -317,6 +322,7 @@ export default defineComponent({
             'has-selector': props.showSelectController,
             'has-carets': props.showIcon,
             'is-highlight': props.highlightSelectedNode && props.checked,
+            'is-search-highlight': props.isSearchHighlight,
             dark: props.theme === 'dark',
           }}
           onClick={handleNodeClick}

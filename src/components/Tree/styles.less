@@ -13,3 +13,20 @@
     }
   }
 }
+
+.@{css-prefix}-tree-node {
+  &.is-search-highlight {
+    background-color: #fff3cd;
+    animation: search-highlight-pulse 1s ease-in-out;
+    border-radius: 3px;
+  }
+}
+
+@keyframes search-highlight-pulse {
+  0%, 100% {
+    background-color: #fff3cd;
+  }
+  50% {
+    background-color: #ffe69c;
+  }
+}
