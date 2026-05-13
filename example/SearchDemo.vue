@@ -24,6 +24,11 @@
         <input type="checkbox" v-model="useRegex" />
         正则表达式
       </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" v-model="useCustomRender" />
+        自定义渲染
+      </label>
     </div>
     
     <div v-if="resultInfo" class="result-info">
@@ -32,7 +37,7 @@
     
     <div class="search-tips">
       <strong>搜索提示：</strong>
-      <span>试试搜索 "User_50"、"Beijing"、"Engineering"、"email" 等关键词</span>
+      <span>试试搜索 "User_50"、"Beijing"、"Engineering"、"email" 等关键词；开启正则试试 "User_\d+"</span>
     </div>
     
     <div class="json-container">
@@ -42,6 +47,8 @@
         :virtual="useVirtual"
         :height="500"
         :deep="3"
+        :render-node-key="useCustomRender ? customRenderKey : undefined"
+        :render-node-value="useCustomRender ? customRenderValue : undefined"
         @search-result-change="handleResultChange"
       />
     </div>
@@ -49,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, h } from 'vue';
 import VueJsonPretty from 'src';
 
 const jsonTreeRef = ref();
@@ -57,8 +64,17 @@ const keyword = ref('');
 const caseSensitive = ref(false);
 const useRegex = ref(false);
 const useVirtual = ref(true);
+const useCustomRender = ref(false);
 const results = ref([]);
 const currentIndex = ref(-1);
+
+const customRenderKey = ({ node, defaultKey, highlightText }) => {
+  return h('span', { style: { color: '#e91e63', fontWeight: 'bold' } }, highlightText(defaultKey));
+};
+
+const customRenderValue = ({ node, defaultValue, highlightText }) => {
+  return h('span', { style: { fontStyle: 'italic' } }, highlightText(defaultValue));
+};
 
 const generateLargeData = () => {
   const users = [];
@@ -142,14 +158,14 @@ const handleSearch = () => {
 const handleNext = () => {
   const result = jsonTreeRef.value?.scrollToNextResult();
   if (result) {
-    currentIndex.value = jsonTreeRef.value?.currentResultIndex || 0;
+    currentIndex.value = jsonTreeRef.value?.currentResultIndex ?? 0;
   }
 };
 
 const handlePrev = () => {
   const result = jsonTreeRef.value?.scrollToPrevResult();
   if (result) {
-    currentIndex.value = jsonTreeRef.value?.currentResultIndex || 0;
+    currentIndex.value = jsonTreeRef.value?.currentResultIndex ?? 0;
   }
 };
 

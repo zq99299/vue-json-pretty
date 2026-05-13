@@ -10,7 +10,7 @@ import {
   nextTick,
 } from 'vue';
 import TreeNode, { treeNodePropsPass, NodeDataType } from 'src/components/TreeNode';
-import { emitError, jsonFlatten, cloneDeep } from 'src/utils';
+import { emitError, jsonFlatten, cloneDeep, createSearchRegex } from 'src/utils';
 import './styles.less';
 
 export interface SearchResult {
@@ -40,6 +40,8 @@ export interface TreeExposeMethods {
   startEdit: (path: string) => void;
   stopEdit: () => void;
   updateValue: (path: string, value: unknown) => void;
+  readonly currentResultIndex: number;
+  readonly searchResults: SearchResult[];
 }
 
 export default defineComponent({
@@ -162,6 +164,9 @@ export default defineComponent({
       currentResultIndex: -1,
       highlightedPath: '',
       editingPath: '',
+      currentSearchKeyword: '',
+      currentSearchCaseSensitive: false,
+      currentSearchRegex: false,
     });
 
     // Dynamic height bookkeeping
@@ -590,22 +595,12 @@ export default defineComponent({
 
     const matchKeyword = (text: string, options: SearchOptions): boolean => {
       if (!text || !options.keyword) return false;
-      
-      const { keyword, caseSensitive = false, regex = false } = options;
-      
-      try {
-        if (regex) {
-          const flags = caseSensitive ? 'g' : 'gi';
-          const pattern = new RegExp(keyword, flags);
-          return pattern.test(String(text));
-        } else {
-          const searchText = caseSensitive ? String(text) : String(text).toLowerCase();
-          const searchKeyword = caseSensitive ? keyword : keyword.toLowerCase();
-          return searchText.includes(searchKeyword);
-        }
-      } catch {
-        return false;
-      }
+      const regex = createSearchRegex(options.keyword, {
+        caseSensitive: options.caseSensitive,
+        regex: options.regex,
+      });
+      if (!regex) return false;
+      return regex.test(String(text));
     };
 
     const search = (options: SearchOptions): SearchResult[] => {
@@ -615,8 +610,13 @@ export default defineComponent({
         state.searchResults = [];
         state.currentResultIndex = -1;
         state.highlightedPath = '';
+        state.currentSearchKeyword = '';
         return [];
       }
+
+      state.currentSearchKeyword = keyword;
+      state.currentSearchCaseSensitive = options.caseSensitive ?? false;
+      state.currentSearchRegex = options.regex ?? false;
       
       const results: SearchResult[] = [];
       const originData = originFlatData.value;
@@ -674,6 +674,7 @@ export default defineComponent({
       state.searchResults = [];
       state.currentResultIndex = -1;
       state.highlightedPath = '';
+      state.currentSearchKeyword = '';
     };
 
     const scrollToResult = (result: SearchResult) => {
@@ -830,6 +831,8 @@ export default defineComponent({
       startEdit,
       stopEdit,
       updateValue,
+      get currentResultIndex() { return state.currentResultIndex; },
+      get searchResults() { return state.searchResults; },
     });
 
     return () => {
@@ -879,6 +882,9 @@ export default defineComponent({
               onExpandAll={(path: string, depth: number, cascade: boolean) => expandAll(path, depth, cascade)}
               onCollapseAll={(path: string, depth: number, cascade: boolean) => collapseAll(path, depth, cascade)}
               isSearchHighlight={state.highlightedPath === item.path}
+              searchKeyword={state.highlightedPath === item.path ? state.currentSearchKeyword : ''}
+              searchCaseSensitive={state.currentSearchCaseSensitive}
+              searchRegex={state.currentSearchRegex}
               class={props.dynamicHeight ? 'dynamic-height' : undefined}
               style={
                 props.dynamicHeight

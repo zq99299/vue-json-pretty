@@ -8,8 +8,8 @@
 
 | 插槽名 | 说明 | 参数 |
 |--------|------|------|
-| [renderNodeKey](#rendernodekey) | 自定义渲染节点键 | { node, defaultKey } |
-| [renderNodeValue](#rendernodevalue) | 自定义渲染节点值 | { node, defaultValue } |
+| [renderNodeKey](#rendernodekey) | 自定义渲染节点键 | { node, defaultKey, highlightText } |
+| [renderNodeValue](#rendernodevalue) | 自定义渲染节点值 | { node, defaultValue, highlightText } |
 | [renderNodeActions](#rendernodeactions) | 自定义渲染节点操作 | { node, defaultActions, expandAll, collapseAll, expandFirstLevel, collapseFirstLevel, expandToLevel, collapseToLevel } |
 
 ## 插槽列表
@@ -24,16 +24,17 @@
 |--------|------|------|
 | node | NodeData | 当前节点数据 |
 | defaultKey | VNode | 默认渲染的键 VNode |
+| highlightText | (text: string) => (string \| VNode)[] | 搜索内联高亮函数，对文本应用搜索匹配高亮，匹配部分用 `<mark>` 包裹；无搜索时返回原文本 |
 
 #### 示例
 
 ```vue
 <template>
   <vue-json-pretty :data="data">
-    <template #renderNodeKey="{ node, defaultKey }">
-      <!-- 自定义键的样式 -->
+    <template #renderNodeKey="{ node, defaultKey, highlightText }">
+      <!-- 自定义键的样式，同时保留搜索内联高亮 -->
       <span class="custom-key" :style="{ color: getKeyColor(node) }">
-        {{ node.key }}
+        {{ highlightText(node.key) }}
       </span>
     </template>
   </vue-json-pretty>
@@ -41,7 +42,6 @@
 
 <script setup>
 const getKeyColor = (node) => {
-  // 根据节点类型返回不同颜色
   if (node.type === 'objectStart') return '#1890ff';
   if (node.type === 'arrayStart') return '#52c41a';
   return '#333';
@@ -59,7 +59,7 @@ const getKeyColor = (node) => {
 
 - 自定义键的颜色和样式
 - 添加图标或徽章
-- 实现键的搜索高亮
+- 配合 `highlightText` 实现搜索内联高亮
 
 ---
 
@@ -73,21 +73,22 @@ const getKeyColor = (node) => {
 |--------|------|------|
 | node | NodeData | 当前节点数据 |
 | defaultValue | VNode | 默认渲染的值 VNode |
+| highlightText | (text: string) => (string \| VNode)[] | 搜索内联高亮函数，对文本应用搜索匹配高亮，匹配部分用 `<mark>` 包裹；无搜索时返回原文本 |
 
 #### 示例
 
 ```vue
 <template>
   <vue-json-pretty :data="data">
-    <template #renderNodeValue="{ node, defaultValue }">
-      <!-- URL 显示为链接 -->
+    <template #renderNodeValue="{ node, defaultValue, highlightText }">
+      <!-- URL 显示为链接，同时保留搜索内联高亮 -->
       <a 
         v-if="isUrl(node.content)" 
         :href="node.content" 
         target="_blank"
         class="url-link"
       >
-        {{ node.content }}
+        {{ highlightText(node.content) }}
       </a>
       
       <!-- 邮箱显示为邮件链接 -->
@@ -96,11 +97,11 @@ const getKeyColor = (node) => {
         :href="`mailto:${node.content}`"
         class="email-link"
       >
-        {{ node.content }}
+        {{ highlightText(node.content) }}
       </a>
       
-      <!-- 其他值使用默认渲染 -->
-      <span v-else>{{ defaultValue }}</span>
+      <!-- 其他值使用默认渲染 + 搜索内联高亮 -->
+      <span v-else>{{ highlightText(defaultValue) }}</span>
     </template>
   </vue-json-pretty>
 </template>
@@ -546,6 +547,8 @@ const editKey = (node) => {
 
 ### 示例 3：带搜索高亮的 JSON 查看器
 
+搜索功能内置了内联高亮支持，导航到搜索结果时，匹配的具体字符会用橙色加粗的 `<mark>` 标签高亮显示。使用自定义插槽时，可通过 `highlightText` 函数保留内联高亮能力。
+
 ```vue
 <template>
   <div>
@@ -553,15 +556,32 @@ const editKey = (node) => {
       v-model="searchKeyword" 
       placeholder="搜索..."
       class="search-input"
+      @keyup.enter="handleSearch"
     />
+    <button @click="handleSearch">搜索</button>
+    <button @click="handleNext">下一个</button>
+    <button @click="handlePrev">上一个</button>
     
-    <vue-json-pretty :data="data">
-      <template #renderNodeKey="{ node }">
-        <span v-html="highlightText(node.key, searchKeyword)"></span>
+    <vue-json-pretty 
+      ref="jsonTreeRef" 
+      :data="data"
+      virtual
+      :height="600"
+    >
+      <template #renderNodeKey="{ node, defaultKey, highlightText }">
+        <span class="custom-key">{{ highlightText(node.key) }}</span>
       </template>
       
-      <template #renderNodeValue="{ node, defaultValue }">
-        <span v-html="highlightText(String(node.content), searchKeyword)"></span>
+      <template #renderNodeValue="{ node, defaultValue, highlightText }">
+        <a 
+          v-if="isUrl(node.content)" 
+          :href="node.content" 
+          target="_blank"
+          class="url-link"
+        >
+          {{ highlightText(node.content) }}
+        </a>
+        <span v-else>{{ highlightText(defaultValue) }}</span>
       </template>
     </vue-json-pretty>
   </div>
@@ -570,14 +590,24 @@ const editKey = (node) => {
 <script setup>
 import { ref } from 'vue';
 
-const data = ref({ /* ... */ });
+const jsonTreeRef = ref();
 const searchKeyword = ref('');
+const data = ref({ /* ... */ });
 
-const highlightText = (text, keyword) => {
-  if (!keyword || !text) return text;
-  
-  const regex = new RegExp(`(${keyword})`, 'gi');
-  return text.replace(regex, '<mark class="highlight">$1</mark>');
+const isUrl = (value) => {
+  return typeof value === 'string' && value.startsWith('http');
+};
+
+const handleSearch = () => {
+  jsonTreeRef.value?.search({ keyword: searchKeyword.value });
+};
+
+const handleNext = () => {
+  jsonTreeRef.value?.scrollToNextResult();
+};
+
+const handlePrev = () => {
+  jsonTreeRef.value?.scrollToPrevResult();
 };
 </script>
 
@@ -590,12 +620,18 @@ const highlightText = (text, keyword) => {
   border-radius: 4px;
 }
 
-:deep(.highlight) {
-  background: #fff566;
-  padding: 0 2px;
+.custom-key {
+  font-weight: 500;
+}
+
+.url-link {
+  color: #1890ff;
+  text-decoration: underline;
 }
 </style>
 ```
+
+> **提示**：如果不使用自定义插槽，搜索内联高亮会自动生效，无需额外配置。`highlightText` 仅在自定义插槽中需要手动调用。
 
 ## 注意事项
 

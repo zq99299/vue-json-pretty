@@ -171,3 +171,23 @@ export function stringToAutoType(source: string): unknown {
   }
   return value;
 }
+
+export function createSearchRegex(
+  keyword: string,
+  options: { caseSensitive?: boolean; regex?: boolean } = {},
+): RegExp | null {
+  if (!keyword) return null;
+
+  const { caseSensitive = false, regex = false } = options;
+
+  try {
+    const flags = caseSensitive ? 'g' : 'gi';
+    if (regex) {
+      return new RegExp(keyword, flags);
+    }
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(escaped, flags);
+  } catch {
+    return null;
+  }
+}

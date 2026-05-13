@@ -826,13 +826,13 @@ const handleCancel = () => {
 
 ### renderNodeKey
 
-**类型**：`(opt: { node: NodeData, defaultKey: VNode }) => VNode`
+**类型**：`(opt: { node: NodeData, defaultKey: VNode, highlightText: (text: string) => (string | VNode)[] }) => VNode`
 
 **必填**：否
 
 **默认值**：无
 
-**说明**：自定义渲染节点键。也可使用 `#renderNodeKey` 插槽。
+**说明**：自定义渲染节点键。也可使用 `#renderNodeKey` 插槽。回调参数中的 `highlightText` 函数可用于对文本应用搜索内联高亮，当有搜索关键词时，匹配部分会被 `<mark>` 标签包裹；无搜索时直接返回原文本。
 
 **示例**：
 ```vue
@@ -845,8 +845,8 @@ const handleCancel = () => {
   
   <!-- 使用插槽方式 -->
   <vue-json-pretty :data="data">
-    <template #renderNodeKey="{ node, defaultKey }">
-      <span class="custom-key">{{ node.key }}</span>
+    <template #renderNodeKey="{ node, defaultKey, highlightText }">
+      <span class="custom-key">{{ highlightText(node.key) }}</span>
     </template>
   </vue-json-pretty>
 </template>
@@ -854,9 +854,8 @@ const handleCancel = () => {
 <script setup>
 import { h } from 'vue';
 
-const renderKey = ({ node, defaultKey }) => {
-  // 自定义渲染逻辑
-  return h('span', { class: 'custom-key' }, node.key);
+const renderKey = ({ node, defaultKey, highlightText }) => {
+  return h('span', { class: 'custom-key' }, highlightText(node.key));
 };
 </script>
 ```
@@ -865,13 +864,13 @@ const renderKey = ({ node, defaultKey }) => {
 
 ### renderNodeValue
 
-**类型**：`(opt: { node: NodeData, defaultValue: VNode }) => VNode`
+**类型**：`(opt: { node: NodeData, defaultValue: VNode, highlightText: (text: string) => (string | VNode)[] }) => VNode`
 
 **必填**：否
 
 **默认值**：无
 
-**说明**：自定义渲染节点值。也可使用 `#renderNodeValue` 插槽。
+**说明**：自定义渲染节点值。也可使用 `#renderNodeValue` 插槽。回调参数中的 `highlightText` 函数可用于对文本应用搜索内联高亮，当有搜索关键词时，匹配部分会被 `<mark>` 标签包裹；无搜索时直接返回原文本。
 
 **示例**：
 ```vue
@@ -884,11 +883,11 @@ const renderKey = ({ node, defaultKey }) => {
   
   <!-- 使用插槽方式 -->
   <vue-json-pretty :data="data">
-    <template #renderNodeValue="{ node, defaultValue }">
+    <template #renderNodeValue="{ node, defaultValue, highlightText }">
       <span v-if="isUrl(node.content)" class="url-link">
-        {{ node.content }}
+        {{ highlightText(node.content) }}
       </span>
-      <span v-else>{{ defaultValue }}</span>
+      <span v-else>{{ highlightText(defaultValue) }}</span>
     </template>
   </vue-json-pretty>
 </template>
@@ -898,8 +897,8 @@ const isUrl = (value) => {
   return typeof value === 'string' && value.startsWith('http');
 };
 
-const renderValue = ({ node, defaultValue }) => {
-  // 自定义渲染逻辑
+const renderValue = ({ node, defaultValue, highlightText }) => {
+  // 自定义渲染逻辑，使用 highlightText 应用搜索内联高亮
 };
 </script>
 ```

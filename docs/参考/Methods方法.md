@@ -6,19 +6,21 @@
 
 ## 速查表
 
-| 方法名 | 说明 | 参数 | 返回值 |
-|--------|------|------|--------|
-| [expandAll](#expandall) | 展开指定节点下的子节点 | (path?: string, depth?: number, cascade?: boolean) | void |
-| [collapseAll](#collapseall) | 收缩指定节点下的子节点 | (path?: string, depth?: number, cascade?: boolean) | void |
-| [getChildrenPaths](#getchildrenpaths) | 获取指定节点下的子节点路径 | (path: string, depth?: number, cascade?: boolean) | string[] |
-| [search](#search) | 执行搜索 | (options: SearchOptions) | SearchResult[] |
-| [clearSearch](#clearsearch) | 清除搜索结果 | () | void |
-| [scrollToResult](#scrolltoresult) | 滚动到指定搜索结果 | (result: SearchResult) | void |
-| [scrollToNextResult](#scrolltonextresult) | 滚动到下一个搜索结果 | () | SearchResult \| null |
-| [scrollToPrevResult](#scrolltoprevresult) | 滚动到上一个搜索结果 | () | SearchResult \| null |
-| [startEdit](#startedit) | 进入编辑模式 | (path: string) | void |
-| [stopEdit](#stopedit) | 退出编辑模式 | () | void |
-| [updateValue](#updatevalue) | 更新节点值 | (path: string, value: unknown) | void |
+| 方法名                                       | 说明            | 参数                                                 | 返回值                  |
+| ----------------------------------------- | ------------- | -------------------------------------------------- | -------------------- |
+| [expandAll](#expandall)                   | 展开指定节点下的子节点   | (path?: string, depth?: number, cascade?: boolean) | void                 |
+| [collapseAll](#collapseall)               | 收缩指定节点下的子节点   | (path?: string, depth?: number, cascade?: boolean) | void                 |
+| [getChildrenPaths](#getchildrenpaths)     | 获取指定节点下的子节点路径 | (path: string, depth?: number, cascade?: boolean)  | string\[]            |
+| [search](#search)                         | 执行搜索          | (options: SearchOptions)                           | SearchResult\[]      |
+| [clearSearch](#clearsearch)               | 清除搜索结果        | ()                                                 | void                 |
+| [scrollToResult](#scrolltoresult)         | 滚动到指定搜索结果     | (result: SearchResult)                             | void                 |
+| [scrollToNextResult](#scrolltonextresult) | 滚动到下一个搜索结果    | ()                                                 | SearchResult \| null |
+| [scrollToPrevResult](#scrolltoprevresult) | 滚动到上一个搜索结果    | ()                                                 | SearchResult \| null |
+| [startEdit](#startedit)                   | 进入编辑模式        | (path: string)                                     | void                 |
+| [stopEdit](#stopedit)                     | 退出编辑模式        | ()                                                 | void                 |
+| [updateValue](#updatevalue)               | 更新节点值         | (path: string, value: unknown)                     | void                 |
+| [currentResultIndex](#currentresultindex) | 当前搜索结果的索引     | -                                                  | number               |
+| [searchResults](#searchresults)           | 当前搜索结果列表      | -                                                  | SearchResult\[]      |
 
 ## 基本用法
 
@@ -51,18 +53,17 @@ expandAll(path?: string, depth?: number, cascade?: boolean): void
 
 #### 参数
 
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| path | string | 否 | - | 节点路径，不传则展开所有节点 |
-| depth | number | 否 | Infinity | 层级深度 |
-| cascade | boolean | 否 | false | 是否级联操作 |
+| 参数名     | 类型      | 必填 | 默认值      | 说明             |
+| ------- | ------- | -- | -------- | -------------- |
+| path    | string  | 否  | -        | 节点路径，不传则展开所有节点 |
+| depth   | number  | 否  | Infinity | 层级深度           |
+| cascade | boolean | 否  | false    | 是否级联操作         |
 
 #### cascade 参数说明
 
 - `cascade: false`（默认）：精确模式，只操作第 N 级
   - `expandAll('root', 2, false)` - 只展开第 2 级子节点
   - 适用于：精确控制某一层级的展开/折叠
-
 - `cascade: true`：级联模式，操作前 N 级
   - `expandAll('root', 2, true)` - 展开第 1 级和第 2 级子节点
   - 适用于：用户想看到第 N 级内容时，确保父级都已展开
@@ -74,6 +75,7 @@ expandAll(path?: string, depth?: number, cascade?: boolean): void
 - `Infinity`：操作所有子节点（默认）
 
 **重要**：`depth` 参数的含义取决于 `cascade` 参数：
+
 - `cascade: false`：只操作第 N 级
 - `cascade: true`：操作前 N 级
 
@@ -120,7 +122,7 @@ const expandFirstTwoLevels = () => {
 </script>
 ```
 
----
+***
 
 ### collapseAll
 
@@ -134,11 +136,11 @@ collapseAll(path?: string, depth?: number, cascade?: boolean): void
 
 #### 参数
 
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| path | string | 否 | - | 节点路径，不传则收缩所有节点 |
-| depth | number | 否 | Infinity | 层级深度 |
-| cascade | boolean | 否 | false | 是否级联操作 |
+| 参数名     | 类型      | 必填 | 默认值      | 说明             |
+| ------- | ------- | -- | -------- | -------------- |
+| path    | string  | 否  | -        | 节点路径，不传则收缩所有节点 |
+| depth   | number  | 否  | Infinity | 层级深度           |
+| cascade | boolean | 否  | false    | 是否级联操作         |
 
 #### 示例
 
@@ -156,7 +158,7 @@ jsonTreeRef.value?.collapseAll('root', 1, false);
 jsonTreeRef.value?.collapseAll('root', 2, true);
 ```
 
----
+***
 
 ### getChildrenPaths
 
@@ -170,11 +172,11 @@ getChildrenPaths(path: string, depth?: number, cascade?: boolean): string[]
 
 #### 参数
 
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| path | string | 是 | - | 节点路径 |
-| depth | number | 否 | Infinity | 层级深度 |
-| cascade | boolean | 否 | false | 是否级联获取 |
+| 参数名     | 类型      | 必填 | 默认值      | 说明     |
+| ------- | ------- | -- | -------- | ------ |
+| path    | string  | 是  | -        | 节点路径   |
+| depth   | number  | 否  | Infinity | 层级深度   |
+| cascade | boolean | 否  | false    | 是否级联获取 |
 
 #### 返回值
 
@@ -309,7 +311,7 @@ const restoreExpandState = () => {
 };
 ```
 
----
+***
 
 ### search
 
@@ -323,12 +325,12 @@ search(options: SearchOptions): SearchResult[]
 
 #### SearchOptions 参数
 
-| 参数名 | 类型 | 必填 | 默认值 | 说明 |
-|--------|------|------|--------|------|
-| keyword | string | 是 | - | 搜索关键词 |
-| caseSensitive | boolean | 否 | false | 是否大小写敏感 |
-| regex | boolean | 否 | false | 是否使用正则表达式 |
-| searchIn | ('key' \| 'value' \| 'path')[] | 否 | ['key', 'value'] | 搜索范围 |
+| 参数名           | 类型                              | 必填 | 默认值               | 说明        |
+| ------------- | ------------------------------- | -- | ----------------- | --------- |
+| keyword       | string                          | 是  | -                 | 搜索关键词     |
+| caseSensitive | boolean                         | 否  | false             | 是否大小写敏感   |
+| regex         | boolean                         | 否  | false             | 是否使用正则表达式 |
+| searchIn      | ('key' \| 'value' \| 'path')\[] | 否  | \['key', 'value'] | 搜索范围      |
 
 #### SearchResult 返回值
 
@@ -369,7 +371,7 @@ const handleSearch = () => {
 </script>
 ```
 
----
+***
 
 ### clearSearch
 
@@ -387,7 +389,7 @@ clearSearch(): void
 jsonTreeRef.value?.clearSearch();
 ```
 
----
+***
 
 ### scrollToResult
 
@@ -401,9 +403,9 @@ scrollToResult(result: SearchResult): void
 
 #### 参数
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| result | SearchResult | 是 | 搜索结果对象 |
+| 参数名    | 类型           | 必填 | 说明     |
+| ------ | ------------ | -- | ------ |
+| result | SearchResult | 是  | 搜索结果对象 |
 
 #### 示例
 
@@ -414,7 +416,7 @@ if (results && results.length > 0) {
 }
 ```
 
----
+***
 
 ### scrollToNextResult
 
@@ -454,7 +456,7 @@ const handleNext = () => {
 </script>
 ```
 
----
+***
 
 ### scrollToPrevResult
 
@@ -476,7 +478,7 @@ scrollToPrevResult(): SearchResult | null
 const result = jsonTreeRef.value?.scrollToPrevResult();
 ```
 
----
+***
 
 ### startEdit
 
@@ -490,9 +492,9 @@ startEdit(path: string): void
 
 #### 参数
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| path | string | 是 | 要编辑的节点路径 |
+| 参数名  | 类型     | 必填 | 说明       |
+| ---- | ------ | -- | -------- |
+| path | string | 是  | 要编辑的节点路径 |
 
 #### 示例
 
@@ -531,7 +533,7 @@ const handleEdit = (node) => {
 - 在 `renderNodeValue` 插槽中添加编辑图标，点击图标触发编辑
 - 编程方式自动进入编辑模式
 
----
+***
 
 ### stopEdit
 
@@ -567,7 +569,7 @@ const handleCancel = () => {
 </script>
 ```
 
----
+***
 
 ### updateValue
 
@@ -581,10 +583,10 @@ updateValue(path: string, value: unknown): void
 
 #### 参数
 
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| path | string | 是 | 要更新的节点路径 |
-| value | unknown | 是 | 新的值，支持字符串、数字、布尔值、null、undefined |
+| 参数名   | 类型      | 必填 | 说明                              |
+| ----- | ------- | -- | ------------------------------- |
+| path  | string  | 是  | 要更新的节点路径                        |
+| value | unknown | 是  | 新的值，支持字符串、数字、布尔值、null、undefined |
 
 #### 示例
 
@@ -729,6 +731,7 @@ const handleEdit = (node) => {
 ### 1. 节点路径格式
 
 路径使用点号和方括号表示：
+
 - 对象属性：`root.user.name`
 - 数组元素：`root.items[0]`
 - 嵌套结构：`root.data[0].user.name`
@@ -736,6 +739,7 @@ const handleEdit = (node) => {
 ### 2. 层级深度理解
 
 `depth` 参数表示只操作指定层级的节点：
+
 - `depth = 1`：只操作第 1 级子节点
 - `depth = 2`：只操作第 2 级子节点（不影响第 1 级）
 - `depth = Infinity`：操作所有子节点
@@ -743,6 +747,7 @@ const handleEdit = (node) => {
 ### 3. 性能考虑
 
 大数据量时建议：
+
 - 使用虚拟滚动（`virtual` prop）
 - 避免频繁操作大量节点
 - 使用 `depth` 参数限制操作范围
@@ -750,6 +755,7 @@ const handleEdit = (node) => {
 ### 4. 方法调用时机
 
 确保在组件挂载后调用方法：
+
 ```javascript
 import { onMounted } from 'vue';
 
@@ -796,3 +802,4 @@ interface TreeExposeMethods {
 - [如何展开收缩节点](../指南/如何展开收缩节点.md) - 详细使用指南
 - [DataStructures 数据结构](DataStructures数据结构.md) - 节点数据结构
 - [Props 配置](Props配置.md) - 组件属性配置
+

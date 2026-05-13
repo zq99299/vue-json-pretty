@@ -20,6 +20,11 @@
     animation: search-highlight-pulse 1s ease-in-out;
     border-radius: 3px;
   }
+
+  &.dark.is-search-highlight {
+    background-color: #5c4a1e;
+    animation: search-highlight-pulse-dark 1s ease-in-out;
+  }
 }
 
 @keyframes search-highlight-pulse {
@@ -28,5 +33,14 @@
   }
   50% {
     background-color: #ffe69c;
+  }
+}
+
+@keyframes search-highlight-pulse-dark {
+  0%, 100% {
+    background-color: #5c4a1e;
+  }
+  50% {
+    background-color: #7a6128;
   }
 }

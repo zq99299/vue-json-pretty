@@ -2,7 +2,7 @@ import { defineComponent, reactive, computed, watch, ref as vueRef, PropType, CS
 import Brackets from 'src/components/Brackets';
 import CheckController from 'src/components/CheckController';
 import Carets from 'src/components/Carets';
-import { getDataType, JSONFlattenReturnType, JSONDataType, stringToAutoType } from 'src/utils';
+import { getDataType, JSONFlattenReturnType, JSONDataType, stringToAutoType, createSearchRegex } from 'src/utils';
 import { useClipboard } from 'src/hooks/useClipboard';
 import './styles.less';
 
@@ -61,11 +61,11 @@ export const treeNodePropsPass = {
   },
   // Custom render for key.
   renderNodeKey: Function as PropType<
-    (opt: { node: NodeDataType; defaultKey: string | JSX.Element }) => unknown
+    (opt: { node: NodeDataType; defaultKey: string | JSX.Element; highlightText: (text: string) => (string | JSX.Element)[] }) => unknown
   >,
   // Custom render for value.
   renderNodeValue: Function as PropType<
-    (opt: { node: NodeDataType; defaultValue: string | JSX.Element }) => unknown
+    (opt: { node: NodeDataType; defaultValue: string | JSX.Element; highlightText: (text: string) => (string | JSX.Element)[] }) => unknown
   >,
   // Custom render for node actions.
   renderNodeActions: {
@@ -169,6 +169,18 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    searchKeyword: {
+      type: String,
+      default: '',
+    },
+    searchCaseSensitive: {
+      type: Boolean,
+      default: false,
+    },
+    searchRegex: {
+      type: Boolean,
+      default: false,
+    },
     style: Object as PropType<CSSProperties>,
     onSelectedChange: {
       type: Function as PropType<(node: NodeDataType) => void>,
@@ -196,12 +208,58 @@ export default defineComponent({
       props.showDoubleQuotes ? `"${props.node.key}"` : props.node.key,
     );
 
+    const renderHighlightText = (text: string): (string | JSX.Element)[] => {
+      const keyword = props.searchKeyword;
+      if (!text || !keyword) return [text];
+
+      const matchRegex = createSearchRegex(keyword, {
+        caseSensitive: props.searchCaseSensitive,
+        regex: props.searchRegex,
+      });
+      if (!matchRegex) return [text];
+
+      const parts: (string | JSX.Element)[] = [];
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+      let keyIdx = 0;
+
+      while ((match = matchRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(text.slice(lastIndex, match.index));
+        }
+        parts.push(
+          <mark class="vjs-search-match" key={`m-${keyIdx++}`}>
+            {match[0]}
+          </mark>,
+        );
+        lastIndex = matchRegex.lastIndex;
+        if (match[0].length === 0) matchRegex.lastIndex++;
+      }
+
+      if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+      }
+
+      return parts.length > 0 ? parts : [text];
+    };
+
     const renderKey = () => {
       const render = props.renderNodeKey;
+      const keyText = prettyKey.value || '';
 
-      return render
-        ? render({ node: props.node, defaultKey: prettyKey.value || '' })
-        : prettyKey.value;
+      if (render) {
+        return render({
+          node: props.node,
+          defaultKey: keyText,
+          highlightText: renderHighlightText,
+        });
+      }
+
+      if (props.searchKeyword && keyText) {
+        return renderHighlightText(keyText);
+      }
+
+      return keyText;
     };
 
     const isMultiple = computed(() => props.selectableType === 'multiple');
@@ -236,9 +294,19 @@ export default defineComponent({
     const renderValue = () => {
       const render = props.renderNodeValue;
 
-      return render
-        ? render({ node: props.node, defaultValue: defaultValue.value })
-        : defaultValue.value;
+      if (render) {
+        return render({
+          node: props.node,
+          defaultValue: defaultValue.value,
+          highlightText: renderHighlightText,
+        });
+      }
+
+      if (props.searchKeyword && defaultValue.value) {
+        return renderHighlightText(defaultValue.value);
+      }
+
+      return defaultValue.value;
     };
 
     const handleBracketsClick = () => {
