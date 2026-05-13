@@ -34,6 +34,13 @@
           </select>
         </div>
       </div>
+      <h3>Slots:</h3>
+      <div class="options">
+        <div>
+          <label>renderNodeValue</label>
+          <input v-model="state.useRenderNodeValueSlot" type="checkbox" />
+        </div>
+      </div>
       <div>
         <label>theme</label>
         <select v-model="localDarkMode">
@@ -53,7 +60,17 @@
         :show-line-number="state.showLineNumber"
         :editable="state.editable"
         :editable-trigger="state.editableTrigger"
-      />
+      >
+        <template v-if="state.useRenderNodeValueSlot" #renderNodeValue="{ node, defaultValue }">
+          <a
+            v-if="typeof node.content === 'string' && node.content.startsWith('http://')"
+            class="json-url-link"
+          >
+            {{ node.content }}
+          </a>
+          <span v-else>{{ defaultValue }}</span>
+        </template>
+      </vue-json-pretty>
     </div>
   </div>
 </template>
@@ -105,6 +122,7 @@ export default defineComponent({
       editable: true,
       editableTrigger: 'click',
       deep: 3,
+      useRenderNodeValueSlot: false,
     });
 
     const { localDarkMode, toggleLocalDarkMode, globalDarkModeState } = useDarkMode();
@@ -140,4 +158,10 @@ export default defineComponent({
   },
 });
 </script>
-./useDarkMode
+
+<style scoped>
+.json-url-link {
+  color: #1890ff;
+  text-decoration: underline;
+}
+</style>

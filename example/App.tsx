@@ -3,6 +3,7 @@ import Basic from './Basic.vue';
 import VirtualList from './VirtualList.vue';
 import SelectControl from './SelectControl.vue';
 import Editable from './Editable.vue';
+import CustomEdit from './CustomEdit.vue';
 import SearchDemo from './SearchDemo.vue';
 // import Tsx from './Tsx';
 import './styles.less';
@@ -28,6 +29,11 @@ const list = [
     title: 'Editable',
     key: 'Editable',
     component: Editable,
+  },
+  {
+    title: 'Custom Edit',
+    key: 'CustomEdit',
+    component: CustomEdit,
   },
   {
     title: 'Search',

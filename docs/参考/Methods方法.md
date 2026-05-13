@@ -16,6 +16,9 @@
 | [scrollToResult](#scrolltoresult) | 滚动到指定搜索结果 | (result: SearchResult) | void |
 | [scrollToNextResult](#scrolltonextresult) | 滚动到下一个搜索结果 | () | SearchResult \| null |
 | [scrollToPrevResult](#scrolltoprevresult) | 滚动到上一个搜索结果 | () | SearchResult \| null |
+| [startEdit](#startedit) | 进入编辑模式 | (path: string) | void |
+| [stopEdit](#stopedit) | 退出编辑模式 | () | void |
+| [updateValue](#updatevalue) | 更新节点值 | (path: string, value: unknown) | void |
 
 ## 基本用法
 
@@ -473,6 +476,254 @@ scrollToPrevResult(): SearchResult | null
 const result = jsonTreeRef.value?.scrollToPrevResult();
 ```
 
+---
+
+### startEdit
+
+进入编辑模式，激活指定节点的编辑状态。
+
+#### 签名
+
+```typescript
+startEdit(path: string): void
+```
+
+#### 参数
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| path | string | 是 | 要编辑的节点路径 |
+
+#### 示例
+
+```vue
+<template>
+  <div>
+    <vue-json-pretty
+      ref="jsonTreeRef"
+      :data="data"
+      :editable="true"
+      editable-trigger="custom"
+    >
+      <template #renderNodeValue="{ node, defaultValue }">
+        <span>{{ defaultValue }}</span>
+        <span class="edit-icon" @click.stop="handleEdit(node)">✎</span>
+      </template>
+    </vue-json-pretty>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+const data = ref({ name: 'test', age: 25 });
+
+const handleEdit = (node) => {
+  jsonTreeRef.value?.startEdit(node.path);
+};
+</script>
+```
+
+#### 使用场景
+
+- 配合 `editableTrigger="custom"` 实现自定义触发编辑
+- 在 `renderNodeValue` 插槽中添加编辑图标，点击图标触发编辑
+- 编程方式自动进入编辑模式
+
+---
+
+### stopEdit
+
+退出编辑模式，取消当前节点的编辑状态。
+
+#### 签名
+
+```typescript
+stopEdit(): void
+```
+
+#### 示例
+
+```vue
+<template>
+  <vue-json-pretty
+    ref="jsonTreeRef"
+    :data="data"
+    :editable="true"
+    editable-trigger="custom"
+  />
+  <button @click="handleCancel">取消编辑</button>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+
+const handleCancel = () => {
+  jsonTreeRef.value?.stopEdit();
+};
+</script>
+```
+
+---
+
+### updateValue
+
+更新指定节点的值。
+
+#### 签名
+
+```typescript
+updateValue(path: string, value: unknown): void
+```
+
+#### 参数
+
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| path | string | 是 | 要更新的节点路径 |
+| value | unknown | 是 | 新的值，支持字符串、数字、布尔值、null、undefined |
+
+#### 示例
+
+```vue
+<template>
+  <div>
+    <vue-json-pretty
+      ref="jsonTreeRef"
+      v-model:data="data"
+      :editable="true"
+      editable-trigger="custom"
+      :editable-input="false"
+    />
+
+    <!-- 自定义编辑面板 -->
+    <div v-if="editingPath" class="edit-panel">
+      <input v-model="editValue" @keyup.enter="handleSave" />
+      <button @click="handleSave">保存</button>
+      <button @click="handleCancel">取消</button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+const data = ref({ name: 'test', age: 25 });
+const editingPath = ref('');
+const editValue = ref('');
+
+const handleEditClick = (node) => {
+  editingPath.value = node.path;
+  editValue.value = String(node.content);
+  jsonTreeRef.value?.startEdit(node.path);
+};
+
+const handleSave = () => {
+  if (!editingPath.value) return;
+  // 自动类型转换
+  let value = editValue.value;
+  if (value === 'null') value = null;
+  else if (value === 'undefined') value = undefined;
+  else if (value === 'true') value = true;
+  else if (value === 'false') value = false;
+  else if (!isNaN(Number(value)) && value.trim() !== '') value = Number(value);
+
+  jsonTreeRef.value?.updateValue(editingPath.value, value);
+  handleCancel();
+};
+
+const handleCancel = () => {
+  jsonTreeRef.value?.stopEdit();
+  editingPath.value = '';
+  editValue.value = '';
+};
+</script>
+```
+
+#### 使用场景
+
+- 配合 `editableInput: false` 实现完全自定义的编辑 UI
+- 编程方式批量更新节点值
+- 在外部编辑面板中保存修改
+
+## 编辑功能使用场景
+
+### 场景 1：使用内置编辑（最简单）
+
+```vue
+<template>
+  <vue-json-pretty
+    v-model:data="data"
+    :editable="true"
+    editable-trigger="click"
+  />
+</template>
+```
+
+### 场景 2：自定义触发 + 内置输入框
+
+通过图标触发编辑，但使用组件内置的输入框：
+
+```vue
+<template>
+  <vue-json-pretty
+    ref="jsonTreeRef"
+    v-model:data="data"
+    :editable="true"
+    editable-trigger="custom"
+    :editable-input="true"
+  >
+    <template #renderNodeValue="{ node, defaultValue }">
+      <span>{{ defaultValue }}</span>
+      <span v-if="node.type === 'content'" class="edit-icon" @click.stop="handleEdit(node)">✎</span>
+    </template>
+  </vue-json-pretty>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+const data = ref({ name: 'test' });
+
+const handleEdit = (node) => {
+  jsonTreeRef.value?.startEdit(node.path);
+};
+</script>
+```
+
+### 场景 3：完全自定义编辑
+
+禁用内置输入框，使用外部编辑面板：
+
+```vue
+<template>
+  <vue-json-pretty
+    ref="jsonTreeRef"
+    v-model:data="data"
+    :editable="true"
+    editable-trigger="custom"
+    :editable-input="false"
+  >
+    <template #renderNodeValue="{ node, defaultValue }">
+      <a v-if="isUrl(node.content)" :href="node.content" target="_blank">{{ node.content }}</a>
+      <span v-else>{{ defaultValue }}</span>
+      <span v-if="node.type === 'content'" class="edit-icon" @click.stop="handleEditClick(node)">✎</span>
+    </template>
+  </vue-json-pretty>
+
+  <div v-if="editingPath" class="edit-panel">
+    <input v-model="editValue" @keyup.enter="handleSave" @keyup.escape="handleCancel" />
+    <button @click="handleSave">保存</button>
+    <button @click="handleCancel">取消</button>
+  </div>
+</template>
+```
+
 ## 注意事项
 
 ### 1. 节点路径格式
@@ -534,6 +785,9 @@ interface TreeExposeMethods {
   scrollToResult: (result: SearchResult) => void;
   scrollToNextResult: () => SearchResult | null;
   scrollToPrevResult: () => SearchResult | null;
+  startEdit: (path: string) => void;
+  stopEdit: () => void;
+  updateValue: (path: string, value: unknown) => void;
 }
 ```
 

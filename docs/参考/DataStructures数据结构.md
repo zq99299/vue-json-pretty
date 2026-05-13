@@ -259,6 +259,14 @@ interface TreeExposeMethods {
   expandAll: (path?: string, depth?: number, cascade?: boolean) => void;
   collapseAll: (path?: string, depth?: number, cascade?: boolean) => void;
   getChildrenPaths: (path: string, depth?: number, cascade?: boolean) => string[];
+  search: (options: SearchOptions) => SearchResult[];
+  clearSearch: () => void;
+  scrollToResult: (result: SearchResult) => void;
+  scrollToNextResult: () => SearchResult | null;
+  scrollToPrevResult: () => SearchResult | null;
+  startEdit: (path: string) => void;
+  stopEdit: () => void;
+  updateValue: (path: string, value: unknown) => void;
 }
 ```
 
@@ -269,6 +277,14 @@ interface TreeExposeMethods {
 | expandAll | path?: string, depth?: number | void | 展开指定节点下的子节点 |
 | collapseAll | path?: string, depth?: number | void | 收缩指定节点下的子节点 |
 | getChildrenPaths | path: string, depth?: number | string[] | 获取子节点路径数组 |
+| search | options: SearchOptions | SearchResult[] | 执行搜索 |
+| clearSearch | 无 | void | 清除搜索结果 |
+| scrollToResult | result: SearchResult | void | 滚动到指定搜索结果 |
+| scrollToNextResult | 无 | SearchResult \| null | 滚动到下一个搜索结果 |
+| scrollToPrevResult | 无 | SearchResult \| null | 滚动到上一个搜索结果 |
+| startEdit | path: string | void | 进入编辑模式 |
+| stopEdit | 无 | void | 退出编辑模式 |
+| updateValue | path: string, value: unknown | void | 更新节点值 |
 
 ### 使用示例
 

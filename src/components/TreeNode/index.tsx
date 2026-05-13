@@ -1,4 +1,4 @@
-import { defineComponent, reactive, computed, PropType, CSSProperties } from 'vue';
+import { defineComponent, reactive, computed, watch, ref as vueRef, PropType, CSSProperties } from 'vue';
 import Brackets from 'src/components/Brackets';
 import CheckController from 'src/components/CheckController';
 import Carets from 'src/components/Carets';
@@ -122,8 +122,16 @@ export const treeNodePropsPass = {
     default: false,
   },
   editableTrigger: {
-    type: String as PropType<'click' | 'dblclick'>,
+    type: String as PropType<'click' | 'dblclick' | 'custom'>,
     default: 'click',
+  },
+  editableInput: {
+    type: Boolean,
+    default: true,
+  },
+  editingPath: {
+    type: String,
+    default: '',
   },
   onNodeClick: {
     type: Function as PropType<(node: NodeDataType) => void>,
@@ -176,6 +184,7 @@ export default defineComponent({
     'valueChange',
     'expandAll',
     'collapseAll',
+    'editingChange',
   ],
 
   setup(props, { emit }) {
@@ -255,23 +264,47 @@ export default defineComponent({
       emit('nodeMouseover', props.node);
     };
 
-    const handleValueEdit = (e: MouseEvent) => {
-      if (!props.editable) return;
-      if (!state.editing) {
-        state.editing = true;
-        const handle = (innerE: MouseEvent) => {
-          if (
-            innerE.target !== e.target &&
-            (innerE.target as Element)?.parentElement !== e.target
-          ) {
-            state.editing = false;
-            document.removeEventListener('click', handle);
-          }
-        };
-        document.removeEventListener('click', handle);
-        document.addEventListener('click', handle);
+    let clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
+    const valueRef = vueRef<HTMLElement | null>(null);
+
+    const enterEditMode = (currentTarget?: Element) => {
+      if (!props.editable || state.editing) return;
+      state.editing = true;
+      emit('editingChange', props.node.path);
+
+      const target = currentTarget || valueRef.value;
+      clickOutsideHandler = (innerE: MouseEvent) => {
+        if (target ? !target.contains(innerE.target as Node) : true) {
+          exitEditMode();
+        }
+      };
+      document.addEventListener('click', clickOutsideHandler);
+    };
+
+    const exitEditMode = () => {
+      state.editing = false;
+      emit('editingChange', '');
+      if (clickOutsideHandler) {
+        document.removeEventListener('click', clickOutsideHandler);
+        clickOutsideHandler = null;
       }
     };
+
+    const handleValueEdit = (e: MouseEvent) => {
+      if (!props.editable) return;
+      enterEditMode(e.currentTarget as Element);
+    };
+
+    watch(
+      () => props.editingPath,
+      (newPath) => {
+        if (newPath === props.node.path && !state.editing) {
+          enterEditMode();
+        } else if (newPath !== props.node.path && state.editing) {
+          exitEditMode();
+        }
+      },
+    );
 
     const { copy } = useClipboard();
 
@@ -371,9 +404,10 @@ export default defineComponent({
               <Brackets data={node.content.toString()} onClick={handleBracketsClick} />
             ) : (
               <span
+                ref={valueRef}
                 class={valueClass.value}
                 onClick={
-                  props.editable && (!props.editableTrigger || props.editableTrigger === 'click')
+                  props.editable && props.editableTrigger === 'click'
                     ? handleValueEdit
                     : undefined
                 }
@@ -383,7 +417,7 @@ export default defineComponent({
                     : undefined
                 }
               >
-                {props.editable && state.editing ? (
+                {props.editable && props.editableInput && state.editing ? (
                   <input
                     value={defaultValue.value}
                     onChange={handleInputChange}

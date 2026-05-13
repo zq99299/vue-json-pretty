@@ -58,7 +58,8 @@
 | 属性名 | 类型 | 必填 | 默认值 | 说明 |
 |--------|------|------|--------|------|
 | [editable](#editable) | boolean | 否 | `false` | 是否可编辑 |
-| [editableTrigger](#editabletrigger) | `'click' \| 'dblclick'` | 否 | `'click'` | 触发编辑的方式 |
+| [editableTrigger](#editabletrigger) | `'click' \| 'dblclick' \| 'custom'` | 否 | `'click'` | 触发编辑的方式 |
+| [editableInput](#editableinput) | boolean | 否 | `true` | 编辑模式下是否显示内置输入框 |
 
 ### 自定义渲染配置
 
@@ -677,13 +678,19 @@ const handleUpdate = (newData) => {
 
 ### editableTrigger
 
-**类型**：`'click' | 'dblclick'`
+**类型**：`'click' | 'dblclick' | 'custom'`
 
 **必填**：否
 
 **默认值**：`'click'`
 
 **说明**：触发编辑的时机。
+
+| 值 | 说明 |
+|------|------|
+| `'click'` | 单击节点值触发编辑（默认） |
+| `'dblclick'` | 双击节点值触发编辑 |
+| `'custom'` | 不绑定内置触发事件，通过 API（`startEdit`/`stopEdit`）编程控制编辑 |
 
 **示例**：
 ```vue
@@ -701,8 +708,117 @@ const handleUpdate = (newData) => {
     :editable="true"
     editable-trigger="dblclick"
   />
+
+  <!-- 自定义触发：通过 API 控制编辑 -->
+  <vue-json-pretty 
+    ref="jsonTreeRef"
+    :data="data"
+    :editable="true"
+    editable-trigger="custom"
+  />
 </template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+
+// 通过 API 进入编辑模式
+const handleEdit = (path) => {
+  jsonTreeRef.value?.startEdit(path);
+};
+
+// 通过 API 退出编辑模式
+const handleStopEdit = () => {
+  jsonTreeRef.value?.stopEdit();
+};
+</script>
 ```
+
+**注意事项**：
+
+- 使用 `renderNodeValue` 插槽渲染链接等交互元素时，内置触发器（`click`/`dblclick`）会拦截点击事件，导致链接无法正常导航
+- 如果需要链接等交互元素正常工作，请使用 `editableTrigger="custom"` 配合 API 控制编辑
+
+---
+
+### editableInput
+
+**类型**：`boolean`
+
+**必填**：否
+
+**默认值**：`true`
+
+**说明**：编辑模式下是否显示内置输入框。
+
+| 值 | 说明 |
+|------|------|
+| `true` | 编辑模式下显示内置输入框（默认） |
+| `false` | 编辑模式下不显示内置输入框，由外部自定义编辑 UI |
+
+**示例**：
+```vue
+<template>
+  <!-- 使用内置输入框（默认） -->
+  <vue-json-pretty 
+    :data="data"
+    :editable="true"
+    :editable-input="true"
+  />
+
+  <!-- 禁用内置输入框，使用自定义编辑 UI -->
+  <vue-json-pretty 
+    ref="jsonTreeRef"
+    :data="data"
+    :editable="true"
+    editable-trigger="custom"
+    :editable-input="false"
+  >
+    <template #renderNodeValue="{ node, defaultValue }">
+      <span>{{ defaultValue }}</span>
+      <span class="edit-icon" @click.stop="handleEditClick(node)">✎</span>
+    </template>
+  </vue-json-pretty>
+
+  <!-- 自定义编辑面板 -->
+  <div v-if="editingPath" class="edit-panel">
+    <input v-model="editValue" @keyup.enter="handleSave" />
+    <button @click="handleSave">保存</button>
+    <button @click="handleCancel">取消</button>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+
+const jsonTreeRef = ref();
+const editingPath = ref('');
+const editValue = ref('');
+
+const handleEditClick = (node) => {
+  editingPath.value = node.path;
+  editValue.value = String(node.content);
+  jsonTreeRef.value?.startEdit(node.path);
+};
+
+const handleSave = () => {
+  jsonTreeRef.value?.updateValue(editingPath.value, editValue.value);
+  handleCancel();
+};
+
+const handleCancel = () => {
+  jsonTreeRef.value?.stopEdit();
+  editingPath.value = '';
+};
+</script>
+```
+
+**注意事项**：
+
+- `editableInput` 仅在 `editable` 为 `true` 时生效
+- 当 `editableInput` 为 `false` 时，需要通过 `updateValue(path, value)` API 更新数据
+- 通常与 `editableTrigger="custom"` 配合使用，实现完全自定义的编辑体验
 
 ---
 

@@ -139,6 +139,50 @@ const isEmail = (value) => {
 - 图片 URL 显示缩略图
 - 自定义值的样式
 
+#### 编辑模式下的注意事项
+
+当 `editable` 为 `true` 时，`renderNodeValue` 插槽的渲染内容会受到编辑模式的影响：
+
+**内置触发器（click/dblclick）**：
+
+- 点击插槽渲染的任何元素（包括链接）都会触发编辑模式
+- 进入编辑模式后，插槽内容会被内置输入框替换
+- 这是内置模式的正常行为，如果需要链接等交互元素正常工作，请使用自定义模式
+
+**自定义触发器（custom）**：
+
+- 不会拦截任何点击事件，链接等交互元素可以正常工作
+- 需要通过 API（`startEdit`/`stopEdit`）控制编辑状态
+- 配合 `editableInput` 属性决定是否显示内置输入框
+
+```vue
+<template>
+  <!-- 内置模式：点击链接会进入编辑模式 -->
+  <vue-json-pretty :data="data" :editable="true" editable-trigger="click">
+    <template #renderNodeValue="{ node, defaultValue }">
+      <a v-if="isUrl(node.content)" class="url-link">{{ node.content }}</a>
+      <span v-else>{{ defaultValue }}</span>
+    </template>
+  </vue-json-pretty>
+
+  <!-- 自定义模式：链接可以正常导航 -->
+  <vue-json-pretty
+    ref="jsonTreeRef"
+    :data="data"
+    :editable="true"
+    editable-trigger="custom"
+  >
+    <template #renderNodeValue="{ node, defaultValue }">
+      <a v-if="isUrl(node.content)" :href="node.content" target="_blank" class="url-link">
+        {{ node.content }}
+      </a>
+      <span v-else>{{ defaultValue }}</span>
+      <span v-if="node.type === 'content'" class="edit-icon" @click.stop="handleEdit(node)">✎</span>
+    </template>
+  </vue-json-pretty>
+</template>
+```
+
 ---
 
 ### renderNodeActions

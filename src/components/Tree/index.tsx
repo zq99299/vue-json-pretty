@@ -37,6 +37,9 @@ export interface TreeExposeMethods {
   scrollToResult: (result: SearchResult) => void;
   scrollToNextResult: () => SearchResult | null;
   scrollToPrevResult: () => SearchResult | null;
+  startEdit: (path: string) => void;
+  stopEdit: () => void;
+  updateValue: (path: string, value: unknown) => void;
 }
 
 export default defineComponent({
@@ -158,6 +161,7 @@ export default defineComponent({
       searchResults: [] as SearchResult[],
       currentResultIndex: -1,
       highlightedPath: '',
+      editingPath: '',
     });
 
     // Dynamic height bookkeeping
@@ -412,10 +416,23 @@ export default defineComponent({
     };
 
     const handleValueChange = (value: unknown, path: string) => {
+      updateValue(path, value);
+    };
+
+    const updateValue = (path: string, value: unknown) => {
       const newData = cloneDeep(props.data);
       const rootPath = props.rootPath;
       new Function('data', 'val', `data${path.slice(rootPath.length)}=val`)(newData, value);
       emit('update:data', newData);
+    };
+
+    const startEdit = (path: string) => {
+      if (!props.editable) return;
+      state.editingPath = path;
+    };
+
+    const stopEdit = () => {
+      state.editingPath = '';
     };
 
     const getChildrenPaths = (path: string, depth = Infinity, cascade = false): string[] => {
@@ -810,6 +827,9 @@ export default defineComponent({
       scrollToResult,
       scrollToNextResult,
       scrollToPrevResult,
+      startEdit,
+      stopEdit,
+      updateValue,
     });
 
     return () => {
@@ -840,6 +860,8 @@ export default defineComponent({
               highlightSelectedNode={props.highlightSelectedNode}
               editable={props.editable}
               editableTrigger={props.editableTrigger}
+              editableInput={props.editableInput}
+              editingPath={state.editingPath}
               showIcon={props.showIcon}
               showKeyValueSpace={props.showKeyValueSpace}
               renderNodeKey={renderNodeKey}
@@ -851,6 +873,9 @@ export default defineComponent({
               onIconClick={handleIconClick}
               onSelectedChange={handleSelectedChange}
               onValueChange={handleValueChange}
+              onEditingChange={(path: string) => {
+                state.editingPath = path;
+              }}
               onExpandAll={(path: string, depth: number, cascade: boolean) => expandAll(path, depth, cascade)}
               onCollapseAll={(path: string, depth: number, cascade: boolean) => collapseAll(path, depth, cascade)}
               isSearchHighlight={state.highlightedPath === item.path}
