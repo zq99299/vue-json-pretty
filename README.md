@@ -26,7 +26,7 @@
 
 English | [简体中文](./README.zh_CN.md)
 
-二次修改满足自身需求
+二次修改满足自身需求，[更新日志](docs/更新日志.md)
 
 ## Features
 
