@@ -2,7 +2,7 @@ import { defineComponent, reactive, computed, watch, ref as vueRef, PropType, CS
 import Brackets from 'src/components/Brackets';
 import CheckController from 'src/components/CheckController';
 import Carets from 'src/components/Carets';
-import { getDataType, JSONFlattenReturnType, JSONDataType, stringToAutoType, createSearchRegex } from 'src/utils';
+import { getDataType, JSONFlattenReturnType, JSONDataType, stringToAutoType, createSearchRegex, getNestedValue } from 'src/utils';
 import { useClipboard } from 'src/hooks/useClipboard';
 import './styles.less';
 
@@ -376,10 +376,12 @@ export default defineComponent({
 
     const { copy } = useClipboard();
 
+    // 使用 getNestedValue 替代 new Function，兼容 CSP 环境（如 Chrome 扩展）
     const handleCopy = () => {
       const { key, path } = props.node;
       const rootPath = props.rootPath;
-      const content = new Function('data', `return data${path.slice(rootPath.length)}`)(props.data);
+      const nestedPath = path.slice(rootPath.length);
+      const content = getNestedValue(props.data, nestedPath);
       const copiedData = JSON.stringify(key ? { [key]: content } : content, null, 2);
       copy(copiedData);
     };

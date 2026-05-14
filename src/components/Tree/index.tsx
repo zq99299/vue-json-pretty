@@ -10,7 +10,7 @@ import {
   nextTick,
 } from 'vue';
 import TreeNode, { treeNodePropsPass, NodeDataType } from 'src/components/TreeNode';
-import { emitError, jsonFlatten, cloneDeep, createSearchRegex } from 'src/utils';
+import { emitError, jsonFlatten, cloneDeep, createSearchRegex, setNestedValue } from 'src/utils';
 import './styles.less';
 
 export interface SearchResult {
@@ -424,10 +424,12 @@ export default defineComponent({
       updateValue(path, value);
     };
 
+    // 使用 setNestedValue 替代 new Function，兼容 CSP 环境（如 Chrome 扩展）
     const updateValue = (path: string, value: unknown) => {
       const newData = cloneDeep(props.data);
       const rootPath = props.rootPath;
-      new Function('data', 'val', `data${path.slice(rootPath.length)}=val`)(newData, value);
+      const nestedPath = path.slice(rootPath.length);
+      setNestedValue(newData, nestedPath, value);
       emit('update:data', newData);
     };
 

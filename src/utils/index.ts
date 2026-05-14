@@ -191,3 +191,103 @@ export function createSearchRegex(
     return null;
   }
 }
+
+/**
+ * 安全地获取嵌套属性值，替代 new Function 以兼容 CSP 环境
+ * @param data - 数据源对象
+ * @param path - 相对路径（不含 rootPath 前缀），如 ".users[0].name" 或 "[0]"
+ */
+export function getNestedValue(data: unknown, path: string): unknown {
+  if (!path || typeof data !== 'object' || data === null) {
+    return data;
+  }
+
+  const pathParts = parsePath(path);
+  let current: unknown = data;
+
+  for (const part of pathParts) {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+
+    if (Array.isArray(current)) {
+      const index = parseInt(part, 10);
+      if (isNaN(index)) return undefined;
+      current = current[index];
+    } else if (typeof current === 'object') {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+
+  return current;
+}
+
+/**
+ * 安全地设置嵌套属性值，替代 new Function 以兼容 CSP 环境
+ * @param data - 数据源对象（会被直接修改）
+ * @param path - 相对路径（不含 rootPath 前缀），如 ".users[0].name" 或 "[0]"
+ * @param value - 要设置的值
+ */
+export function setNestedValue(data: unknown, path: string, value: unknown): void {
+  if (!path || typeof data !== 'object' || data === null) {
+    return;
+  }
+
+  const pathParts = parsePath(path);
+  let current: unknown = data;
+
+  for (let i = 0; i < pathParts.length; i++) {
+    const part = pathParts[i];
+    const isLast = i === pathParts.length - 1;
+
+    if (current === null || current === undefined) {
+      return;
+    }
+
+    if (Array.isArray(current)) {
+      const index = parseInt(part, 10);
+      if (isNaN(index)) return;
+      if (isLast) {
+        current[index] = value;
+      } else {
+        current = current[index];
+      }
+    } else if (typeof current === 'object') {
+      if (isLast) {
+        (current as Record<string, unknown>)[part] = value;
+      } else {
+        current = (current as Record<string, unknown>)[part];
+      }
+    } else {
+      return;
+    }
+  }
+}
+
+/**
+ * 将路径字符串解析为路径片段数组
+ * 支持三种格式（与 jsonFlatten 生成的路径格式一致）：
+ *   - 标识符访问：.key         → ['key']
+ *   - 数组索引：[0]           → ['0']
+ *   - 特殊键名：["key-name"] → ['key-name']
+ * @param path - 路径字符串，如 ".users[0].name" 或 "["special-key"]"
+ */
+function parsePath(path: string): string[] {
+  const parts: string[] = [];
+  const regex = /([a-zA-Z_]\w*)|\[(\d+)\]|\["([^"]+)"\]/g;
+  let match;
+
+  while ((match = regex.exec(path)) !== null) {
+    if (match[1]) {
+      parts.push(match[1]);
+    } else if (match[2]) {
+      parts.push(match[2]);
+    } else if (match[3]) {
+      parts.push(match[3]);
+    }
+  }
+
+  return parts;
+}
